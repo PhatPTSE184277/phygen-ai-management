@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { mockUsers, mockExams, mockCategories } from '../../data/mockData';
-import {
-  Users,
-  BookOpen,
-  FolderOpen,
+import { 
+  Users, 
+  BookOpen, 
+  FolderOpen, 
   Activity,
   TrendingUp,
   TrendingDown,
@@ -13,10 +13,7 @@ import {
   ArrowUpRight,
   Calendar,
   Award,
-  Clock,
-  BarChart3,
-  PieChart,
-  LineChart
+  Clock
 } from 'lucide-react';
 
 const Dashboard = () => {
@@ -76,32 +73,6 @@ const Dashboard = () => {
   const recentExams = mockExams.slice(0, 5);
   const recentUsers = mockUsers.slice(0, 5);
 
-  // Chart data
-  const userGrowthData = [
-    { month: 'Jan', users: 65 },
-    { month: 'Feb', users: 78 },
-    { month: 'Mar', users: 90 },
-    { month: 'Apr', users: 81 },
-    { month: 'May', users: 95 },
-    { month: 'Jun', users: 110 },
-    { month: 'Jul', users: stats.totalUsers }
-  ];
-
-  const examsByCategory = mockExams.reduce((acc, exam) => {
-    acc[exam.category] = (acc[exam.category] || 0) + 1;
-    return acc;
-  }, {});
-
-  const examsByDifficulty = mockExams.reduce((acc, exam) => {
-    acc[exam.difficulty] = (acc[exam.difficulty] || 0) + 1;
-    return acc;
-  }, {});
-
-  const usersByRole = mockUsers.reduce((acc, user) => {
-    acc[user.role] = (acc[user.role] || 0) + 1;
-    return acc;
-  }, {});
-
   const getDifficultyColor = (difficulty) => {
     switch (difficulty.toLowerCase()) {
       case 'beginner':
@@ -144,11 +115,11 @@ const Dashboard = () => {
         </div>
         <div className="flex items-center gap-2 text-sm text-gray-500">
           <Calendar className="h-4 w-4" />
-          <span>{new Date().toLocaleDateString('en-US', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
+          <span>{new Date().toLocaleDateString('en-US', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
           })}</span>
         </div>
       </div>
@@ -169,8 +140,9 @@ const Dashboard = () => {
                     ) : (
                       <TrendingDown className="h-4 w-4 text-red-500" />
                     )}
-                    <span className={`text-sm font-medium ${card.changeType === 'positive' ? 'text-green-600' : 'text-red-600'
-                      }`}>
+                    <span className={`text-sm font-medium ${
+                      card.changeType === 'positive' ? 'text-green-600' : 'text-red-600'
+                    }`}>
                       {card.change}
                     </span>
                     <span className="text-sm text-gray-500">from last month</span>
@@ -183,152 +155,6 @@ const Dashboard = () => {
             </div>
           );
         })}
-      </div>
-
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* User Growth Chart */}
-        <div className="lg:col-span-2 card">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <LineChart className="h-5 w-5 text-blue-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900">User Growth</h3>
-          </div>
-          <div className="h-64">
-            <div className="flex items-end justify-between h-48 px-4">
-              {userGrowthData.map((data, index) => {
-                const height = (data.users / Math.max(...userGrowthData.map(d => d.users))) * 100;
-                return (
-                  <div key={data.month} className="flex flex-col items-center gap-2">
-                    <div className="relative group">
-                      <div
-                        className="w-8 bg-gradient-to-t from-blue-500 to-blue-400 rounded-t transition-all duration-300 hover:from-blue-600 hover:to-blue-500"
-                        style={{ height: `${height * 1.6}px` }}
-                      />
-                      <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                        {data.users}
-                      </div>
-                    </div>
-                    <span className="text-xs text-gray-600 font-medium">{data.month}</span>
-                  </div>
-                );
-              })}
-            </div>
-            <div className="text-center mt-4">
-              <p className="text-sm text-gray-600">Monthly user registrations</p>
-            </div>
-          </div>
-        </div>
-
-        {/* User Roles Distribution */}
-        <div className="card">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <PieChart className="h-5 w-5 text-purple-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900">User Roles</h3>
-          </div>
-          <div className="space-y-4">
-            {Object.entries(usersByRole).map(([role, count], index) => {
-              const percentage = ((count / stats.totalUsers) * 100).toFixed(1);
-              const colors = [
-                { bg: 'bg-blue-500', light: 'bg-blue-100', text: 'text-blue-800' },
-                { bg: 'bg-green-500', light: 'bg-green-100', text: 'text-green-800' },
-                { bg: 'bg-purple-500', light: 'bg-purple-100', text: 'text-purple-800' }
-              ];
-              const color = colors[index % colors.length];
-
-              return (
-                <div key={role} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-3 h-3 rounded-full ${color.bg}`} />
-                    <span className="font-medium text-gray-900 capitalize">{role}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`badge ${color.light} ${color.text}`}>
-                      {count}
-                    </span>
-                    <span className="text-sm text-gray-500 w-12 text-right">{percentage}%</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* Category & Difficulty Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Exams by Category */}
-        <div className="card">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <BarChart3 className="h-5 w-5 text-green-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900">Exams by Category</h3>
-          </div>
-          <div className="space-y-4">
-            {Object.entries(examsByCategory).map(([category, count], index) => {
-              const percentage = ((count / stats.totalExams) * 100).toFixed(1);
-              const maxCount = Math.max(...Object.values(examsByCategory));
-              const width = (count / maxCount) * 100;
-              const colors = ['bg-emerald-500', 'bg-blue-500', 'bg-purple-500', 'bg-orange-500'];
-
-              return (
-                <div key={category} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-gray-900">{category}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-600">{count} exams</span>
-                      <span className="text-sm text-gray-500">({percentage}%)</span>
-                    </div>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div
-                      className={`h-3 rounded-full ${colors[index % colors.length]} transition-all duration-700 ease-out`}
-                      style={{ width: `${width}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Exams by Difficulty */}
-        <div className="card">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-orange-100 rounded-lg">
-              <BarChart3 className="h-5 w-5 text-orange-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900">Difficulty Distribution</h3>
-          </div>
-          <div className="grid grid-cols-3 gap-4">
-            {Object.entries(examsByDifficulty).map(([difficulty, count], index) => {
-              const percentage = ((count / stats.totalExams) * 100).toFixed(1);
-              const colors = [
-                { bg: 'from-green-500 to-green-600', text: 'text-green-600', light: 'bg-green-100' },
-                { bg: 'from-blue-500 to-blue-600', text: 'text-blue-600', light: 'bg-blue-100' },
-                { bg: 'from-purple-500 to-purple-600', text: 'text-purple-600', light: 'bg-purple-100' }
-              ];
-              const color = colors[index % colors.length];
-
-              return (
-                <div key={difficulty} className="text-center">
-                  <div className={`inline-flex p-3 rounded-xl bg-gradient-to-r ${color.bg} shadow-lg mb-3`}>
-                    <Award className="h-6 w-6 text-white" />
-                  </div>
-                  <h4 className="font-semibold text-gray-900 text-sm mb-1">{difficulty}</h4>
-                  <p className="text-2xl font-bold text-gray-900 mb-1">{count}</p>
-                  <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${color.light} ${color.text}`}>
-                    {percentage}%
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

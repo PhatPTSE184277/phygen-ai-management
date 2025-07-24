@@ -1,16 +1,18 @@
 import { useState } from 'react';
 import { Outlet, Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { 
-  Menu, 
-  X, 
-  Home, 
-  Users, 
-  BookOpen, 
-  BarChart3, 
+import {
+  Menu,
+  X,
+  Home,
+  Users,
+  BookOpen,
+  BarChart3,
   Settings,
   LogOut,
-  FolderOpen
+  FolderOpen,
+  Blocks,
+  FileQuestionMark
 } from 'lucide-react';
 
 const AdminLayout = () => {
@@ -24,6 +26,8 @@ const AdminLayout = () => {
 
   const navigation = [
     { name: 'Dashboard', href: '/admin', icon: Home },
+    { name: 'Topics', href: '/admin/topics', icon: Blocks },
+    { name: 'Questions', href: '/admin/questions', icon: FileQuestionMark },
     { name: 'Users', href: '/admin/users', icon: Users },
     { name: 'Exams', href: '/admin/exams', icon: BookOpen },
     { name: 'Categories', href: '/admin/categories', icon: FolderOpen },
@@ -60,11 +64,10 @@ const AdminLayout = () => {
                   <Link
                     key={item.name}
                     to={item.href}
-                    className={`${
-                      isActive
-                        ? 'bg-primary-100 text-primary-700'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                    } group flex items-center px-2 py-2 text-base font-medium rounded-md`}
+                    className={`${isActive
+                      ? 'bg-primary-100 text-primary-700'
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                      } group flex items-center px-2 py-2 text-base font-medium rounded-md`}
                     onClick={() => setSidebarOpen(false)}
                   >
                     <item.icon className="mr-4 h-6 w-6" />
@@ -99,11 +102,10 @@ const AdminLayout = () => {
                   <Link
                     key={item.name}
                     to={item.href}
-                    className={`${
-                      isActive
-                        ? 'bg-primary-100 text-primary-700'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                    } group flex items-center px-2 py-2 text-sm font-medium rounded-md`}
+                    className={`${isActive
+                      ? 'bg-primary-100 text-primary-700'
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                      } group flex items-center px-2 py-2 text-sm font-medium rounded-md`}
                   >
                     <item.icon className="mr-3 h-5 w-5" />
                     {item.name}

@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { toast } from 'react-toastify';
 import { useSearch } from '../../hooks/useSearch';
 import { useSort } from '../../hooks/useSort';
 import { usePagination } from '../../hooks/usePagination';
@@ -17,6 +16,8 @@ import {
   Eye,
   X
 } from 'lucide-react';
+import { toast } from 'react-toastify';
+import api from '../../config/axios';
 
 const UserManagement = () => {
   const [users, setUsers] = useState(mockUsers);
@@ -24,15 +25,17 @@ const UserManagement = () => {
   const [showViewModal, setShowViewModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [viewingUser, setViewingUser] = useState(null);
+  const [allTopics, setAllTopics] = useState([]);
   const [formData, setFormData] = useState({
     username: '',
     email: '',
     role: 'user',
     status: 'active'
   });
+  const [loading, setLoading] = useState(false);
 
   // Search functionality
-  const { searchTerm, setSearchTerm, filteredData } = useSearch(users, ['username', 'email', 'role']);
+  const { searchTerm, setSearchTerm, filteredData } = useSearch(allTopics, ['username', 'email', 'role']);
 
   // Sort functionality
   const { sortedData, sortKey, sortOrder, handleSort } = useSort(filteredData, 'username', 'asc');
@@ -79,7 +82,6 @@ const UserManagement = () => {
   const handleDelete = (userId) => {
     if (window.confirm('Are you sure you want to delete this user?')) {
       setUsers(users.filter(user => user.id !== userId));
-      toast.success('User deleted successfully!');
     }
   };
 
@@ -93,7 +95,6 @@ const UserManagement = () => {
           ? { ...user, ...formData }
           : user
       ));
-      toast.success('User updated successfully!');
     } else {
       // Create new user
       const newUser = {
@@ -103,7 +104,6 @@ const UserManagement = () => {
         lastLogin: new Date().toISOString().split('T')[0]
       };
       setUsers([...users, newUser]);
-      toast.success('User created successfully!');
     }
 
     setShowModal(false);
@@ -121,6 +121,30 @@ const UserManagement = () => {
       [e.target.name]: e.target.value
     });
   };
+
+  const fetchTopicData = async () => {
+    try {
+      setLoading(true);
+      // Fetch all data without pagination for client-side filtering
+      const response = await api.get('topics?pageSize=1000');
+      console.log('response', response.data);
+      if (response.data.success) {
+        setAllTopics(response.data.data.items);
+
+      } else {
+        toast.error('Failed to fetch topics');
+      }
+    } catch (error) {
+      console.error('Error fetching topics:', error);
+      toast.error('Failed to fetch topics');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTopicData();
+  }, []);
 
   const getRoleColor = (role) => {
     switch (role) {
@@ -196,7 +220,7 @@ const UserManagement = () => {
                   onClick={() => handleSort('username')}
                 >
                   <div className="flex items-center gap-2">
-                    <span>User</span>
+                    <span>Topic Name</span>
                     <SortIcon column="username" />
                   </div>
                 </th>
@@ -205,7 +229,7 @@ const UserManagement = () => {
                   onClick={() => handleSort('email')}
                 >
                   <div className="flex items-center gap-2">
-                    <span>Email</span>
+                    <span>Subject</span>
                     <SortIcon column="email" />
                   </div>
                 </th>
@@ -214,7 +238,7 @@ const UserManagement = () => {
                   onClick={() => handleSort('role')}
                 >
                   <div className="flex items-center gap-2">
-                    <span>Role</span>
+                    <span>Level</span>
                     <SortIcon column="role" />
                   </div>
                 </th>
@@ -223,7 +247,7 @@ const UserManagement = () => {
                   onClick={() => handleSort('status')}
                 >
                   <div className="flex items-center gap-2">
-                    <span>Status</span>
+                    <span>Type</span>
                     <SortIcon column="status" />
                   </div>
                 </th>
@@ -232,7 +256,7 @@ const UserManagement = () => {
                   onClick={() => handleSort('createdAt')}
                 >
                   <div className="flex items-center gap-2">
-                    <span>Joined</span>
+                    <span>Status</span>
                     <SortIcon column="createdAt" />
                   </div>
                 </th>
