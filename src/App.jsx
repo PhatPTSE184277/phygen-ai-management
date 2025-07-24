@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -7,14 +8,14 @@ import Home from './components/Home';
 import Login from './components/Login';
 import Register from './components/Register';
 import AdminLayout from './components/admin/AdminLayout';
-import Dashboard from './components/admin/Dashboard';
+import Dashboard from './components/admin/Dashboard/Dashboard';
 import UserManagement from './components/admin/UserManagement';
 import ExamManagement from './components/admin/ExamManagement';
 import CategoryManagement from './components/admin/CategoryManagement';
 import Analytics from './components/admin/Analytics';
 import Settings from './components/admin/Settings';
+import SubjectManagement from './components/admin/Subject/SubjectManagement';
 
-// Protected Route Component
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
 
@@ -29,7 +30,6 @@ const ProtectedRoute = ({ children }) => {
   return user ? children : <Navigate to="/login" replace />;
 };
 
-// Public Route Component (redirect to admin if logged in)
 const PublicRoute = ({ children }) => {
   const { user, loading } = useAuth();
 
@@ -78,6 +78,7 @@ function App() {
             }>
               <Route index element={<Dashboard />} />
               <Route path="users" element={<UserManagement />} />
+              <Route path="subjects" element={<SubjectManagement />} />
               <Route path="exams" element={<ExamManagement />} />
               <Route path="categories" element={<CategoryManagement />} />
               <Route path="analytics" element={<Analytics />} />

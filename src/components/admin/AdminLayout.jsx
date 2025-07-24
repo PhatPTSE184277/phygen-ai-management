@@ -10,7 +10,8 @@ import {
   BarChart3, 
   Settings,
   LogOut,
-  FolderOpen
+  FolderOpen,
+  Award
 } from 'lucide-react';
 
 const AdminLayout = () => {
@@ -25,6 +26,7 @@ const AdminLayout = () => {
   const navigation = [
     { name: 'Dashboard', href: '/admin', icon: Home },
     { name: 'Users', href: '/admin/users', icon: Users },
+    { name: 'Subjects', href: '/admin/subjects', icon: Award },
     { name: 'Exams', href: '/admin/exams', icon: BookOpen },
     { name: 'Categories', href: '/admin/categories', icon: FolderOpen },
     { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
