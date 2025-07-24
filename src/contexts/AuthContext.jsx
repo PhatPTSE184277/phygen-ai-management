@@ -31,7 +31,6 @@ export const AuthProvider = ({ children }) => {
     try {
 
       const response = await api.post(`auth/login`, { identifier: email, password });
-
       if (response.data.success) {
         const { token, user } = response.data.data;
         setToken(token);

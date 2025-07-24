@@ -1,6 +1,4 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Header from './components/Header';
 import Home from './components/Home';
@@ -13,6 +11,8 @@ import ExamManagement from './components/admin/ExamManagement';
 import CategoryManagement from './components/admin/CategoryManagement';
 import Analytics from './components/admin/Analytics';
 import Settings from './components/admin/Settings';
+import Topic from './components/admin/Topic';
+import Question from './components/admin/Question';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -82,26 +82,13 @@ function App() {
               <Route path="categories" element={<CategoryManagement />} />
               <Route path="analytics" element={<Analytics />} />
               <Route path="settings" element={<Settings />} />
+              <Route path="topics" element={<Topic />} />
+              <Route path="questions" element={<Question />} />
             </Route>
 
-
+            {/* Fallback route */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-
-
-          <ToastContainer
-            position="top-right"
-            autoClose={3000}
-            hideProgressBar={false}
-            newestOnTop={false}
-            closeOnClick
-            rtl={false}
-            pauseOnFocusLoss
-            draggable
-            pauseOnHover
-            theme="light"
-            className="toast-container"
-          />
         </div>
       </Router>
     </AuthProvider>
