@@ -26,22 +26,27 @@ const ExamManagement = () => {
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
   const [pageSize] = useState(10);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sortKey, setSortKey] = useState('id');
-  const [sortOrder, setSortOrder] = useState('asc');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortKey, setSortKey] = useState("id");
+  const [sortOrder, setSortOrder] = useState("asc");
   // Fetch exams with pagination
-  const fetchExams = async (page = 1, search = '', sort = 'id', order = 'asc') => {
+  const fetchExams = async (
+    page = 1,
+    search = "",
+    sort = "id",
+    order = "asc"
+  ) => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
-        page: (page - 1).toString(), // API uses 0-based indexing
+        page: (page - 1).toString(),
         size: pageSize.toString(),
         sortBy: sort,
-        sortDir: order
+        sortDir: order,
       });
 
       if (search.trim()) {
-        params.append('search', search);
+        params.append("search", search);
       }
 
       const response = await exApi.get(`exams?${params.toString()}`);
@@ -68,13 +73,13 @@ const ExamManagement = () => {
   // Handle search
   const handleSearch = (value) => {
     setSearchTerm(value);
-    setCurrentPage(1); // Reset to first page when searching
+    setCurrentPage(1);
     fetchExams(1, value, sortKey, sortOrder);
   };
 
   // Handle sort
   const handleSort = (column) => {
-    const newOrder = sortKey === column && sortOrder === 'asc' ? 'desc' : 'asc';
+    const newOrder = sortKey === column && sortOrder === "asc" ? "desc" : "asc";
     setSortKey(column);
     setSortOrder(newOrder);
     fetchExams(currentPage, searchTerm, column, newOrder);
@@ -113,18 +118,14 @@ const ExamManagement = () => {
     try {
       setLoadingVersions(true);
       const response = await exApi.get(`exam-versions/by-exam/${examId}`);
-      ;
       setExamVersions(response?.data?.data?.content || []);
     } catch (error) {
-
       toast.error("Failed to fetch exam versions");
       setExamVersions([]);
     } finally {
       setLoadingVersions(false);
     }
   };
-
-
 
   // const handleDelete = (examId) => {
   //   toast.info(
@@ -189,7 +190,6 @@ const ExamManagement = () => {
   };
 
   const formatCreatedAt = (createAtArray) => {
-
     if (!createAtArray) {
       return "N/A";
     }
@@ -235,7 +235,6 @@ const ExamManagement = () => {
       );
 
       if (isNaN(date.getTime())) {
-
         return "Invalid Date";
       }
 
@@ -373,10 +372,11 @@ const ExamManagement = () => {
                 exams.map((exam, index) => (
                   <tr
                     key={exam?.id || index}
-                    className={`hover:bg-gray-50 transition-colors ${index !== exams.length - 1
-                      ? "border-b border-gray-100"
-                      : ""
-                      }`}
+                    className={`hover:bg-gray-50 transition-colors ${
+                      index !== exams.length - 1
+                        ? "border-b border-gray-100"
+                        : ""
+                    }`}
                   >
                     <td className="table-cell">
                       <span className="text-gray-600">{exam?.id}</span>
@@ -492,10 +492,11 @@ const ExamManagement = () => {
                     <button
                       key={page}
                       onClick={() => goToPage(page)}
-                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${currentPage === page
-                        ? "bg-blue-600 text-white shadow-md"
-                        : "text-gray-600 hover:bg-gray-100"
-                        }`}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        currentPage === page
+                          ? "bg-blue-600 text-white shadow-md"
+                          : "text-gray-600 hover:bg-gray-100"
+                      }`}
                     >
                       {page}
                     </button>
@@ -578,8 +579,9 @@ const ExamManagement = () => {
                         Draft Status
                       </label>
                       <span
-                        className={`badge ${viewingExam?.draft ? "badge-blue" : "badge-green"
-                          }`}
+                        className={`badge ${
+                          viewingExam?.draft ? "badge-blue" : "badge-green"
+                        }`}
                       >
                         {viewingExam?.draft ? "Draft" : "Published"}
                       </span>

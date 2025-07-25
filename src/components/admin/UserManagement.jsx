@@ -97,7 +97,7 @@ const UserManagement = () => {
     prevPage,
     hasNext,
     hasPrev,
-  } = usePagination(sortedData, 5);
+  } = usePagination(sortedData, 10);
 
   // Helper functions
   const getRoleLabel = (roleValue) => {
