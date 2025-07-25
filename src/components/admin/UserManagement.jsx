@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
@@ -40,11 +39,11 @@ const statusOptions = [
 const UserManagement = () => {
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [viewingUser, setViewingUser] = useState(null);
-  const [allTopics, setAllTopics] = useState([]);
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -54,14 +53,31 @@ const UserManagement = () => {
     emailVerified: true,
     password: "",
   });
-  const [loading, setLoading] = useState(false);
-
+  // Fetch users
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get("account_admins", {
+        params: {
+          Page: 1,
+          PageSize: 1000,
+        },
+      });
+      console.log(response?.data?.data);
+      setUsers(response?.data?.data?.items || []);
+    } catch (e) {
+      console.log("Error", e);
+      toast.error("Failed to fetch users");
+    } finally {
+      setLoading(false);
+    }
+  };
   // Search functionality
 
   const { searchTerm, setSearchTerm, filteredData } = useSearch(users, [
+    "id",
     "username",
     "email",
-    "role",
   ]);
 
   // Sort functionality
@@ -156,7 +172,6 @@ const UserManagement = () => {
     setShowViewModal(true);
   };
 
-
   const handleViewUserExams = (userId) => {
     navigate(`/admin/users/exams?userId=${userId}`);
   };
@@ -165,14 +180,13 @@ const UserManagement = () => {
     if (window.confirm("Are you sure you want to delete this user?")) {
       try {
         await api.delete(`account_admins/${userId}`);
-        setUsers(users.filter((user) => user.id !== userId));
         toast.success("User deleted successfully!");
+        fetchUsers();
       } catch (error) {
         toast.error(
           "Delete failed: " + (error.response?.data?.message || error.message)
         );
       }
-
     }
   };
 
@@ -180,7 +194,6 @@ const UserManagement = () => {
     e.preventDefault();
 
     if (editingUser) {
-
       // Update existing user - API cần accountStatus
       const updatePayload = {
         username: formData.username,
@@ -205,7 +218,6 @@ const UserManagement = () => {
           "Update failed: " + (error.response?.data?.message || error.message)
         );
       }
-
     } else {
       // Create new user - API tạo mới không cần status
       const createPayload = {
@@ -216,7 +228,6 @@ const UserManagement = () => {
         accountType: formData.accountType,
         password: formData.password,
       };
-
 
       try {
         const response = await api.post("account_admins", createPayload);
@@ -229,7 +240,6 @@ const UserManagement = () => {
           "Create failed: " + (error.response?.data?.message || error.message)
         );
       }
-
     }
 
     setFormData({
@@ -260,7 +270,6 @@ const UserManagement = () => {
     ) : (
       <ChevronDown className="h-4 w-4 text-blue-600" />
     );
-
   };
 
   SortIcon.propTypes = {
@@ -271,22 +280,6 @@ const UserManagement = () => {
     fetchUsers();
   }, []);
 
-  // Fetch users
-  const fetchUsers = async () => {
-    try {
-      const response = await api.get("account_admins", {
-        params: {
-          Page: 1,
-          PageSize: 1000,
-        },
-      });
-      console.log(response?.data?.data);
-      setUsers(response?.data?.data?.items || []);
-    } catch (e) {
-      console.log("Error", e);
-      toast.error("Failed to fetch users");
-    }
-  };
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -313,7 +306,7 @@ const UserManagement = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search users by name, email or role..."
+              placeholder="Search users by id, name or email..."
               className="input-field pl-11"
               value={searchTerm}
               onChange={(e) => {
@@ -339,7 +332,6 @@ const UserManagement = () => {
                   onClick={() => handleSort("id")}
                 >
                   <div className="flex items-center gap-2">
-
                     <span>User ID</span>
                     <SortIcon column="id" />
                   </div>
@@ -359,7 +351,7 @@ const UserManagement = () => {
                   onClick={() => handleSort("email")}
                 >
                   <div className="flex items-center gap-2">
-                    <span>Subject</span>
+                    <span>Email</span>
                     <SortIcon column="email" />
                   </div>
                 </th>
@@ -368,7 +360,7 @@ const UserManagement = () => {
                   onClick={() => handleSort("role")}
                 >
                   <div className="flex items-center gap-2">
-                    <span>Level</span>
+                    <span>Role</span>
                     <SortIcon column="role" />
                   </div>
                 </th>
@@ -377,7 +369,7 @@ const UserManagement = () => {
                   onClick={() => handleSort("status")}
                 >
                   <div className="flex items-center gap-2">
-                    <span>Type</span>
+                    <span>Status</span>
                     <SortIcon column="status" />
                   </div>
                 </th>
@@ -386,72 +378,103 @@ const UserManagement = () => {
               </tr>
             </thead>
             <tbody>
-              {paginatedData.map((user, index) => (
-                <tr
-                  key={user.id}
-                  className={`hover:bg-gray-50 transition-colors ${
-                    index !== paginatedData.length - 1
-                      ? "border-b border-gray-100"
-                      : ""
-                  }`}
-                >
-                  <td className="table-cell">
-                    <span className="text-gray-600">{user.id}</span>
-                  </td>
-                  <td className="table-cell">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center shadow-md">
-                        <span className="text-sm font-semibold text-white">
-                          {user.username.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                      <div>
-                        <div className="font-semibold text-gray-900">
-                          {user.username}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="table-cell">
-                    <span className="text-gray-600">{user.email}</span>
-                  </td>
-                  <td className="table-cell">
-                    <span className={`badge ${getRoleColor(user.role)}`}>
-                      {getRoleLabel(user.role)}
-                    </span>
-                  </td>
-                  <td className="table-cell">
-                    <span className={`badge ${getStatusColor(user.status)}`}>
-                      {getStatusLabel(user.status)}
-                    </span>
-                  </td>
-                  <td className="table-cell">
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => handleView(user)}
-                        className="btn-icon-secondary"
-                        title="View details"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleEdit(user)}
-                        className="btn-icon-primary"
-                        title="Edit user"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(user.id)}
-                        className="btn-icon-danger"
-                        title="Delete user"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+              {loading ? (
+                <tr>
+                  <td
+                    colSpan="6"
+                    className="table-cell text-center text-gray-500 py-8"
+                  >
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                      Loading users...
                     </div>
                   </td>
                 </tr>
-              ))}
+              ) : paginatedData && paginatedData.length > 0 ? (
+                paginatedData.map((user, index) => (
+                  <tr
+                    key={user.id}
+                    className={`hover:bg-gray-50 transition-colors ${
+                      index !== paginatedData.length - 1
+                        ? "border-b border-gray-100"
+                        : ""
+                    }`}
+                  >
+                    <td className="table-cell">
+                      <span className="text-gray-600">{user.id}</span>
+                    </td>
+                    <td className="table-cell">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center shadow-md">
+                          <span className="text-sm font-semibold text-white">
+                            {user.username.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                        <div>
+                          <div className="font-semibold text-gray-900">
+                            {user.username}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="table-cell">
+                      <span className="text-gray-600">{user.email}</span>
+                    </td>
+                    <td className="table-cell">
+                      <span className={`badge ${getRoleColor(user.role)}`}>
+                        {getRoleLabel(user.role)}
+                      </span>
+                    </td>
+                    <td className="table-cell">
+                      <span className={`badge ${getStatusColor(user.status)}`}>
+                        {getStatusLabel(user.status)}
+                      </span>
+                    </td>
+                    <td className="table-cell">
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleView(user)}
+                          className="btn-icon-secondary"
+                          title="View details"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleEdit(user)}
+                          className="btn-icon-primary"
+                          title="Edit user"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(user.id)}
+                          className="btn-icon-danger"
+                          title="Delete user"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan="6"
+                    className="table-cell text-center text-gray-500 py-8"
+                  >
+                    <div className="flex flex-col items-center gap-2">
+                      <Search className="h-12 w-12 text-gray-300" />
+                      <p className="text-lg font-medium">No users found</p>
+                      <p className="text-sm">
+                        {searchTerm
+                          ? "Try adjusting your search criteria"
+                          : "Create your first user to get started"}
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

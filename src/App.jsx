@@ -1,21 +1,25 @@
-
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import Header from './components/Header';
-import Home from './components/Home';
-import Login from './components/Login';
-import Register from './components/Register';
-import AdminLayout from './components/admin/AdminLayout';
-import Dashboard from './components/admin/Dashboard';
-import UserManagement from './components/admin/UserManagement';
-import ExamManagement from './components/admin/ExamManagement';
-import CategoryManagement from './components/admin/CategoryManagement';
-import Analytics from './components/admin/Analytics';
-import Settings from './components/admin/Settings';
-import Topic from './components/admin/Topic';
-import Question from './components/admin/Question';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import Header from "./components/Header";
+import Home from "./components/Home";
+import Login from "./components/Login";
+import Register from "./components/Register";
+import AdminLayout from "./components/admin/AdminLayout";
+import Dashboard from "./components/admin/Dashboard";
+import UserManagement from "./components/admin/UserManagement";
+import ExamManagement from "./components/admin/ExamManagement";
+import CategoryManagement from "./components/admin/CategoryManagement";
+import Analytics from "./components/admin/Analytics";
+import Settings from "./components/admin/Settings";
+import Topic from "./components/admin/Topic";
+import Question from "./components/admin/Question";
 import UserExams from "./components/admin/UsersExam";
-
+import PropTypes from "prop-types";
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -109,11 +113,9 @@ function App() {
               <Route path="questions" element={<Question />} />
             </Route>
 
-
             {/* Fallback route */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-
         </div>
       </Router>
     </AuthProvider>
