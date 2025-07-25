@@ -12,7 +12,8 @@ import {
   LogOut,
   FolderOpen,
   Blocks,
-  FileQuestionMark
+  FileQuestionMark,
+  Award
 } from 'lucide-react';
 
 const AdminLayout = () => {
@@ -28,6 +29,8 @@ const AdminLayout = () => {
     { name: 'Dashboard', href: '/admin', icon: Home },
     { name: 'Topics', href: '/admin/topics', icon: Blocks },
     { name: 'Questions', href: '/admin/questions', icon: FileQuestionMark },
+    { name: 'Users', href: '/admin/users', icon: Users },
+    { name: 'Subjects', href: '/admin/subjects', icon: Award },
     { name: 'Exams', href: '/admin/exams', icon: BookOpen },
     { name: 'Users', href: '/admin/users', icon: Users },
     { name: 'Categories', href: '/admin/categories', icon: FolderOpen },

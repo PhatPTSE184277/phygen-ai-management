@@ -10,7 +10,7 @@ import Home from "./components/Home";
 import Login from "./components/Login";
 import Register from "./components/Register";
 import AdminLayout from "./components/admin/AdminLayout";
-import Dashboard from "./components/admin/Dashboard";
+import Dashboard from "./components/admin/Dashboard/Dashboard";
 import UserManagement from "./components/admin/UserManagement";
 import ExamManagement from "./components/admin/ExamManagement";
 import CategoryManagement from "./components/admin/CategoryManagement";
@@ -20,7 +20,9 @@ import Topic from "./components/admin/Topic";
 import Question from "./components/admin/Question";
 import UserExams from "./components/admin/UsersExam";
 import PropTypes from "prop-types";
-// Protected Route Component
+import 'react-toastify/dist/ReactToastify.css';
+import SubjectManagement from './components/admin/Subject/SubjectManagement';
+
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
 
@@ -105,6 +107,7 @@ function App() {
               <Route index element={<Dashboard />} />
               <Route path="users" element={<UserManagement />} />
               <Route path="users/exams" element={<UserExams />} />
+              <Route path="subjects" element={<SubjectManagement />} />
               <Route path="exams" element={<ExamManagement />} />
               <Route path="categories" element={<CategoryManagement />} />
               <Route path="analytics" element={<Analytics />} />
