@@ -14,29 +14,67 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
+  const [refreshToken, setRefreshToken] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [tokenExpiryTime, setTokenExpiryTime] = useState(null);
 
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
+    const storedRefreshToken = localStorage.getItem('refreshToken');
+    const storedExpiryTime = localStorage.getItem('tokenExpiryTime');
 
     if (storedToken && storedUser) {
       setToken(storedToken);
       setUser(JSON.parse(storedUser));
+      setRefreshToken(storedRefreshToken);
+      setTokenExpiryTime(storedExpiryTime ? parseInt(storedExpiryTime) : null);
+
+      // Check if token is expired
+      if (storedExpiryTime && Date.now() > parseInt(storedExpiryTime)) {
+        // Token is expired, try to refresh
+        if (storedRefreshToken) {
+          refreshTokenFunc();
+        } else {
+          logout();
+        }
+      } else if (storedExpiryTime) {
+        // Token is still valid, set up auto refresh
+        setupTokenRefresh(parseInt(storedExpiryTime));
+      }
     }
     setLoading(false);
   }, []);
+
+  // Add effect to handle token refresh function dependency
+  useEffect(() => {
+    // This effect ensures refreshTokenFunc is available when needed
+  }, [refreshToken]);
 
   const login = async (email, password) => {
     try {
 
       const response = await api.post(`auth/login`, { identifier: email, password });
       if (response.data.success) {
-        const { token, user } = response.data.data;
+        console.log('Login response:', response.data);
+        const { token, user, refreshToken } = response.data.data;
+
+        // Calculate expiry time (100 minutes from now)
+        const expiryTime = Date.now() + (100 * 60 * 1000); // 100 minutes in milliseconds
+
         setToken(token);
         setUser(user);
+        setRefreshToken(refreshToken);
+        setTokenExpiryTime(expiryTime);
+
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('refreshToken', refreshToken);
+        localStorage.setItem('tokenExpiryTime', expiryTime.toString());
+
+        // Set up auto refresh before expiry (refresh 5 minutes before expiry)
+        setupTokenRefresh(expiryTime);
+
         toast.success('Login successful!');
         return response;
       } else {
@@ -69,11 +107,76 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const refreshTokenFunc = async () => {
+    try {
+      const storedRefreshToken = localStorage.getItem('refreshToken');
+      if (!storedRefreshToken) {
+        logout();
+        return;
+      }
+
+      const response = await api.post('auth/refresh-token', {
+        refreshToken: storedRefreshToken
+      });
+
+      if (response.data.success) {
+        const { token, refreshToken: newRefreshToken } = response.data.data;
+
+        // Calculate new expiry time (100 minutes from now)
+        const expiryTime = Date.now() + (100 * 60 * 1000);
+
+        setToken(token);
+        setRefreshToken(newRefreshToken);
+        setTokenExpiryTime(expiryTime);
+
+        localStorage.setItem('token', token);
+        localStorage.setItem('refreshToken', newRefreshToken);
+        localStorage.setItem('tokenExpiryTime', expiryTime.toString());
+
+        // Set up next auto refresh
+        setupTokenRefresh(expiryTime);
+
+        console.log('Token refreshed successfully');
+        return token;
+      } else {
+        logout();
+      }
+    } catch (error) {
+      console.error('Token refresh failed:', error);
+      logout();
+    }
+  };
+
+  const setupTokenRefresh = (expiryTime) => {
+    // Clear any existing timeout
+    if (window.tokenRefreshTimeout) {
+      clearTimeout(window.tokenRefreshTimeout);
+    }
+
+    // Calculate time until refresh (5 minutes before expiry)
+    const refreshTime = expiryTime - Date.now() - (5 * 60 * 1000); // 5 minutes before expiry
+
+    if (refreshTime > 0) {
+      window.tokenRefreshTimeout = setTimeout(() => {
+        refreshTokenFunc();
+      }, refreshTime);
+    }
+  };
+
   const logout = () => {
     setUser(null);
     setToken(null);
+    setRefreshToken(null);
+    setTokenExpiryTime(null);
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('tokenExpiryTime');
+
+    // Clear refresh timeout
+    if (window.tokenRefreshTimeout) {
+      clearTimeout(window.tokenRefreshTimeout);
+    }
   };
 
   const isAdmin = () => user?.role === 'admin';
@@ -83,10 +186,12 @@ export const AuthProvider = ({ children }) => {
   const value = {
     user,
     token,
+    refreshToken,
     loading,
     login,
     register,
     logout,
+    refreshTokenFunc,
     isAdmin,
     isManager,
     canManage
