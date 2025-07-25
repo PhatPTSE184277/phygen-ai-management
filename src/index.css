@@ -96,41 +96,4 @@
   .page-subtitle {
     @apply text-gray-600 mt-2;
   }
-
-  /* Toast Customization */
-  .toast-container .Toastify__toast {
-    @apply rounded-xl shadow-lg border border-gray-100;
-  }
-
-  .toast-container .Toastify__toast--success {
-    @apply bg-green-50 border-green-200;
-  }
-
-  .toast-container .Toastify__toast--error {
-    @apply bg-red-50 border-red-200;
-  }
-
-  .toast-container .Toastify__toast--warning {
-    @apply bg-yellow-50 border-yellow-200;
-  }
-
-  .toast-container .Toastify__toast--info {
-    @apply bg-blue-50 border-blue-200;
-  }
-
-  .toast-container .Toastify__progress-bar--success {
-    @apply bg-green-500;
-  }
-
-  .toast-container .Toastify__progress-bar--error {
-    @apply bg-red-500;
-  }
-
-  .toast-container .Toastify__progress-bar--warning {
-    @apply bg-yellow-500;
-  }
-
-  .toast-container .Toastify__progress-bar--info {
-    @apply bg-blue-500;
-  }
 }

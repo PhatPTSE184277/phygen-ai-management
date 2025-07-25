@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
@@ -43,6 +44,7 @@ const UserManagement = () => {
   const [showViewModal, setShowViewModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [viewingUser, setViewingUser] = useState(null);
+  const [allTopics, setAllTopics] = useState([]);
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -52,8 +54,10 @@ const UserManagement = () => {
     emailVerified: true,
     password: "",
   });
+  const [loading, setLoading] = useState(false);
 
   // Search functionality
+
   const { searchTerm, setSearchTerm, filteredData } = useSearch(users, [
     "username",
     "email",
@@ -152,6 +156,7 @@ const UserManagement = () => {
     setShowViewModal(true);
   };
 
+
   const handleViewUserExams = (userId) => {
     navigate(`/admin/users/exams?userId=${userId}`);
   };
@@ -167,6 +172,7 @@ const UserManagement = () => {
           "Delete failed: " + (error.response?.data?.message || error.message)
         );
       }
+
     }
   };
 
@@ -174,6 +180,7 @@ const UserManagement = () => {
     e.preventDefault();
 
     if (editingUser) {
+
       // Update existing user - API cần accountStatus
       const updatePayload = {
         username: formData.username,
@@ -198,6 +205,7 @@ const UserManagement = () => {
           "Update failed: " + (error.response?.data?.message || error.message)
         );
       }
+
     } else {
       // Create new user - API tạo mới không cần status
       const createPayload = {
@@ -208,6 +216,7 @@ const UserManagement = () => {
         accountType: formData.accountType,
         password: formData.password,
       };
+
 
       try {
         const response = await api.post("account_admins", createPayload);
@@ -220,6 +229,7 @@ const UserManagement = () => {
           "Create failed: " + (error.response?.data?.message || error.message)
         );
       }
+
     }
 
     setFormData({
@@ -250,6 +260,7 @@ const UserManagement = () => {
     ) : (
       <ChevronDown className="h-4 w-4 text-blue-600" />
     );
+
   };
 
   SortIcon.propTypes = {
@@ -328,6 +339,7 @@ const UserManagement = () => {
                   onClick={() => handleSort("id")}
                 >
                   <div className="flex items-center gap-2">
+
                     <span>User ID</span>
                     <SortIcon column="id" />
                   </div>
@@ -338,6 +350,7 @@ const UserManagement = () => {
                 >
                   <div className="flex items-center gap-2">
                     <span>User Name</span>
+
                     <SortIcon column="username" />
                   </div>
                 </th>
@@ -346,7 +359,7 @@ const UserManagement = () => {
                   onClick={() => handleSort("email")}
                 >
                   <div className="flex items-center gap-2">
-                    <span>Email</span>
+                    <span>Subject</span>
                     <SortIcon column="email" />
                   </div>
                 </th>
@@ -355,7 +368,7 @@ const UserManagement = () => {
                   onClick={() => handleSort("role")}
                 >
                   <div className="flex items-center gap-2">
-                    <span>Role</span>
+                    <span>Level</span>
                     <SortIcon column="role" />
                   </div>
                 </th>
@@ -364,10 +377,11 @@ const UserManagement = () => {
                   onClick={() => handleSort("status")}
                 >
                   <div className="flex items-center gap-2">
-                    <span>Status</span>
+                    <span>Type</span>
                     <SortIcon column="status" />
                   </div>
                 </th>
+
                 <th className="table-header">Actions</th>
               </tr>
             </thead>
