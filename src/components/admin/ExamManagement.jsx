@@ -5,8 +5,6 @@ import { useSort } from "../../hooks/useSort";
 import { usePagination } from "../../hooks/usePagination";
 import {
   Search,
-  Plus,
-  Edit,
   Trash2,
   Filter,
   ChevronUp,
@@ -15,7 +13,6 @@ import {
   ChevronRight,
   Eye,
   X,
-  Clock,
   FileText,
   BookOpen,
 } from "lucide-react";
@@ -24,11 +21,9 @@ import exApi from "../../config/exApi";
 const ExamManagement = () => {
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
-  const [editingExam, setEditingExam] = useState(null);
   const [viewingExam, setViewingExam] = useState(null);
-  
+
   // Search functionality - cập nhật để phù hợp với API fields
   const { searchTerm, setSearchTerm, filteredData } = useSearch(exams || [], [
     "id",
@@ -55,7 +50,6 @@ const ExamManagement = () => {
     hasPrev,
   } = usePagination(sortedData, 5);
 
-
   const handleView = (exam) => {
     console.log(exam);
     setViewingExam(exam);
@@ -67,7 +61,6 @@ const ExamManagement = () => {
       setExams(exams.filter((exam) => exam.id !== examId));
     }
   };
-
 
   const getStatusColor = (status) => {
     switch (status.toLowerCase()) {
@@ -175,6 +168,8 @@ const ExamManagement = () => {
     try {
       setLoading(true);
       const response = await exApi.get("exams?size=150");
+
+      console.log(response)
       console.log(response?.data?.data?.content);
       setExams(response?.data?.data?.content || []);
     } catch (e) {
@@ -194,7 +189,6 @@ const ExamManagement = () => {
             Create, manage, and organize your exams and assessments
           </p>
         </div>
-      
       </div>
 
       {/* Search and Filters */}
@@ -331,7 +325,7 @@ const ExamManagement = () => {
                         >
                           <Eye className="h-4 w-4" />
                         </button>
-                      
+
                         <button
                           onClick={() => handleDelete(exam?.id)}
                           className="btn-icon-danger"
@@ -422,8 +416,6 @@ const ExamManagement = () => {
         </div>
       </div>
 
-
-
       {/* View Modal */}
       {showViewModal && viewingExam && (
         <div className="modal-overlay">
@@ -488,7 +480,6 @@ const ExamManagement = () => {
                       </span>
                     </div>
                   </div>
-                 
 
                   <div>
                     <label className="block text-sm font-semibold text-gray-500 mb-1">

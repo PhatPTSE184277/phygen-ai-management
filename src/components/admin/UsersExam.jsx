@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
 import { toast } from "react-toastify";
@@ -162,12 +162,26 @@ const UserExams = () => {
     column: PropTypes.string.isRequired,
   };
 
-  const fetchUserExams = async () => {
+  const fetchUserInfor = async () => {
     try {
       setLoading(true);
-      // Use the specific API endpoint to get exams by account ID
+      const response = await api.get(`account_admins/${userId}`);
+      console.log("User exams response:", response?.data?.data);
+      setUserInfo(response?.data?.data);
+    } catch (error) {
+      console.error("Error fetching user exams:", error);
+      toast.error("Failed to fetch user exams");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchUserExams = async () => {
+    console.log(userId);
+    try {
+      setLoading(true);
       const response = await exApi.get(`exams/by-account/${userId}`);
-      console.log("User exams response:", response?.data?.data?.content);
+      console.log("User exams response:", response);
       setExams(response?.data?.data?.content || []);
     } catch (error) {
       console.error("Error fetching user exams:", error);
@@ -180,6 +194,7 @@ const UserExams = () => {
 
   useEffect(() => {
     if (userId) {
+      fetchUserInfor();
       fetchUserExams();
     }
   }, []);

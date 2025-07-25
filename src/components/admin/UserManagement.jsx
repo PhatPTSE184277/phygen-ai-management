@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
@@ -44,7 +43,6 @@ const UserManagement = () => {
   const [showViewModal, setShowViewModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [viewingUser, setViewingUser] = useState(null);
-  const [allTopics, setAllTopics] = useState([]);
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -54,14 +52,28 @@ const UserManagement = () => {
     emailVerified: true,
     password: "",
   });
-  const [loading, setLoading] = useState(false);
-
+  // Fetch users
+  const fetchUsers = async () => {
+    try {
+      const response = await api.get("account_admins", {
+        params: {
+          Page: 1,
+          PageSize: 1000,
+        },
+      });
+      console.log(response?.data?.data);
+      setUsers(response?.data?.data?.items || []);
+    } catch (e) {
+      console.log("Error", e);
+      toast.error("Failed to fetch users");
+    }
+  };
   // Search functionality
 
   const { searchTerm, setSearchTerm, filteredData } = useSearch(users, [
+    "id",
     "username",
     "email",
-    "role",
   ]);
 
   // Sort functionality
@@ -156,7 +168,6 @@ const UserManagement = () => {
     setShowViewModal(true);
   };
 
-
   const handleViewUserExams = (userId) => {
     navigate(`/admin/users/exams?userId=${userId}`);
   };
@@ -165,14 +176,12 @@ const UserManagement = () => {
     if (window.confirm("Are you sure you want to delete this user?")) {
       try {
         await api.delete(`account_admins/${userId}`);
-        setUsers(users.filter((user) => user.id !== userId));
         toast.success("User deleted successfully!");
       } catch (error) {
         toast.error(
           "Delete failed: " + (error.response?.data?.message || error.message)
         );
       }
-
     }
   };
 
@@ -180,7 +189,6 @@ const UserManagement = () => {
     e.preventDefault();
 
     if (editingUser) {
-
       // Update existing user - API cần accountStatus
       const updatePayload = {
         username: formData.username,
@@ -205,7 +213,6 @@ const UserManagement = () => {
           "Update failed: " + (error.response?.data?.message || error.message)
         );
       }
-
     } else {
       // Create new user - API tạo mới không cần status
       const createPayload = {
@@ -216,7 +223,6 @@ const UserManagement = () => {
         accountType: formData.accountType,
         password: formData.password,
       };
-
 
       try {
         const response = await api.post("account_admins", createPayload);
@@ -229,7 +235,6 @@ const UserManagement = () => {
           "Create failed: " + (error.response?.data?.message || error.message)
         );
       }
-
     }
 
     setFormData({
@@ -260,7 +265,6 @@ const UserManagement = () => {
     ) : (
       <ChevronDown className="h-4 w-4 text-blue-600" />
     );
-
   };
 
   SortIcon.propTypes = {
@@ -271,22 +275,6 @@ const UserManagement = () => {
     fetchUsers();
   }, []);
 
-  // Fetch users
-  const fetchUsers = async () => {
-    try {
-      const response = await api.get("account_admins", {
-        params: {
-          Page: 1,
-          PageSize: 1000,
-        },
-      });
-      console.log(response?.data?.data);
-      setUsers(response?.data?.data?.items || []);
-    } catch (e) {
-      console.log("Error", e);
-      toast.error("Failed to fetch users");
-    }
-  };
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -339,7 +327,6 @@ const UserManagement = () => {
                   onClick={() => handleSort("id")}
                 >
                   <div className="flex items-center gap-2">
-
                     <span>User ID</span>
                     <SortIcon column="id" />
                   </div>
@@ -359,7 +346,7 @@ const UserManagement = () => {
                   onClick={() => handleSort("email")}
                 >
                   <div className="flex items-center gap-2">
-                    <span>Subject</span>
+                    <span>Email</span>
                     <SortIcon column="email" />
                   </div>
                 </th>
@@ -368,7 +355,7 @@ const UserManagement = () => {
                   onClick={() => handleSort("role")}
                 >
                   <div className="flex items-center gap-2">
-                    <span>Level</span>
+                    <span>Role</span>
                     <SortIcon column="role" />
                   </div>
                 </th>
@@ -377,7 +364,7 @@ const UserManagement = () => {
                   onClick={() => handleSort("status")}
                 >
                   <div className="flex items-center gap-2">
-                    <span>Type</span>
+                    <span>Status</span>
                     <SortIcon column="status" />
                   </div>
                 </th>
