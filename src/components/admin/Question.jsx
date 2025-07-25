@@ -20,7 +20,9 @@ import {
     Users,
     Upload,
     FileText,
-    Download
+    Download,
+    CheckSquare,
+    XCircle
 } from 'lucide-react';
 import api from '../../config/axios';
 import exApi from '../../config/exApi';
@@ -44,6 +46,8 @@ const Question = () => {
     const [levelFilter, setLevelFilter] = useState('all');
     const [typeFilter, setTypeFilter] = useState('all');
     const [subjects, setSubjects] = useState([]);
+    const [selectedQuestions, setSelectedQuestions] = useState([]);
+    const [selectAll, setSelectAll] = useState(false);
     const [formData, setFormData] = useState({
         content: '',
         type: 'multiple_choice',
@@ -79,6 +83,8 @@ const Question = () => {
             filtered = filtered.filter(question => question.status === 'active');
         } else if (statusFilter === 'inactive') {
             filtered = filtered.filter(question => question.status === 'inactive');
+        } else if (statusFilter === 'null') {
+            filtered = filtered.filter(question => question.status === null || question.status === undefined);
         }
 
         // Apply difficulty level filter
@@ -219,6 +225,12 @@ const Question = () => {
             fetchQuestionFiles();
         }
     }, [activeTab]);
+
+    // Reset selections when filters change
+    useEffect(() => {
+        setSelectedQuestions([]);
+        setSelectAll(false);
+    }, [statusFilter, levelFilter, typeFilter, searchTerm, currentPage]);
 
     // Handle sort
     const handleSortColumn = (column) => {
@@ -367,6 +379,65 @@ const Question = () => {
         });
     };
 
+    // Checkbox selection functions
+    const handleSelectAll = (e) => {
+        const isChecked = e.target.checked;
+        setSelectAll(isChecked);
+        if (isChecked) {
+            setSelectedQuestions(paginatedData.map(q => q.id));
+        } else {
+            setSelectedQuestions([]);
+        }
+    };
+
+    const handleSelectQuestion = (questionId) => {
+        let newSelected;
+        if (selectedQuestions.includes(questionId)) {
+            newSelected = selectedQuestions.filter(id => id !== questionId);
+        } else {
+            newSelected = [...selectedQuestions, questionId];
+        }
+        setSelectedQuestions(newSelected);
+        setSelectAll(newSelected.length === paginatedData.length && paginatedData.length > 0);
+    };
+
+    const handleBulkAction = async (action) => {
+        if (selectedQuestions.length === 0) {
+            toast.warning('Please select questions first');
+            return;
+        }
+
+        try {
+            setLoading(true);
+
+            if (action === 'verify') {
+
+
+                const response = await exApi.put(`questions/status`, { id: selectedQuestions, status: 'active' });
+                if (response.data.success) {
+                    toast.success(`${selectedQuestions.length} questions verified successfully`);
+                }
+            } else if (action === 'reject') {
+                const response = await exApi.put(`questions/status`, { id: selectedQuestions, status: 'inactive' });
+                if (!response.data.success) {
+                    toast.success(`${selectedQuestions.length} questions rejected successfully`);
+                }
+            }
+
+            setSelectedQuestions([]);
+            setSelectAll(false);
+            fetchQuestionData();
+        } catch (error) {
+            if (action === 'verify') {
+                toast.error('Failed to verify questions');
+            } else if (action === 'reject') {
+                toast.error('Failed to reject questions');
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
 
 
     // File handling functions
@@ -385,9 +456,15 @@ const Question = () => {
 
             const timestamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
 
-            const key = `${timestamp}_${fileFormData.file.name}`;
+            const originalName = fileFormData.file.name;
+            const nameWithoutExtension = originalName.substring(0, originalName.lastIndexOf('.')) || originalName;
+
+
+
+            const key = `${timestamp}_${nameWithoutExtension}`;
             const formData = new FormData();
             formData.append('file', fileFormData.file);
+
             const response = await exApi.post(
                 `Supabase/files?key=${encodeURIComponent(key)}`,
                 formData,
@@ -398,6 +475,7 @@ const Question = () => {
                 }
             );
 
+
             if (response.data.success) {
                 const fileName = response.data.data;
                 const getUrlFile = await exApi.get(
@@ -406,13 +484,21 @@ const Question = () => {
                         params: { fileName }
                     }
                 );
+
                 if (getUrlFile.data.success) {
-                    const resPushUrl = await exApi.post(`questions/ai-generations/from-url?fileUrl=${getUrlFile.data.data}&subjectId=${fileFormData.subjectId} `)
+                    const fileUrl = encodeURIComponent(getUrlFile.data.data);
+                    const subjectId = fileFormData.subjectId;
+
+                    const resPushUrl = await exApi.post(
+                        `questions/ai-generations/from-url?fileUrl=${fileUrl}&subjectId=${subjectId}`,
+                        {}
+                    );
+
                     if (resPushUrl.data.success) {
                         toast.success('File uploaded and questions generated successfully!');
-                        // Refresh the file list
+
                         fetchQuestionFiles();
-                        // Reset form data
+
                         setFileFormData({
                             name: '',
                             description: '',
@@ -466,7 +552,9 @@ const Question = () => {
 
 
     const getStatusColor = (status) => {
-        return status === 'active' ? 'badge-green' : 'badge-red';
+        if (status === 'active') return 'badge-green';
+        if (status === 'inactive') return 'badge-red';
+        return 'badge-yellow';
     };
 
     const getTypeColor = (type) => {
@@ -489,6 +577,20 @@ const Question = () => {
             : <ChevronDown className="h-4 w-4 text-blue-600" />;
     };
 
+    // Hàm định dạng ngày thành DD/MM/YYYY
+    function formatDateFromKey(key) {
+        const datePart = key.split("_")[0]; // "2025-07-25"
+        const [year, month, day] = datePart.split("-");
+        return `${day}/${month}/${year}`;
+    }
+
+    // Hàm lấy phần name sau cùng (sau dấu _ cuối cùng)
+    function extractNameFromKey(key) {
+        const lastUnderscoreIndex = key.lastIndexOf("_");
+        return key.substring(lastUnderscoreIndex + 1);
+    }
+
+
     return (
         <div className="space-y-8">
             {/* Header */}
@@ -500,6 +602,8 @@ const Question = () => {
                     </p>
                 </div>
                 <div className="flex justify-end gap-3">
+
+
                     <button
                         onClick={handleFileUpload}
                         className="btn-primary flex items-center gap-2"
@@ -546,6 +650,7 @@ const Question = () => {
                             >
                                 <option value="active">Active</option>
                                 <option value="inactive">Inactive</option>
+                                <option value="null">Not verified</option>
                             </select>
 
                             <select
@@ -569,7 +674,7 @@ const Question = () => {
                                 <option value="essay">Essay</option>
                             </select>
 
-                            {(searchTerm || levelFilter !== 'all' || typeFilter !== 'all') && (
+                            {(searchTerm || levelFilter !== 'all' || typeFilter !== 'all' || statusFilter !== 'active') && (
                                 <button
                                     onClick={() => {
                                         setSearchTerm('');
@@ -598,32 +703,58 @@ const Question = () => {
             {/* Tabs */}
             <div className="card p-0">
                 <div className="border-b border-gray-200">
-                    <nav className="flex space-x-8 px-6 ">
-                        <button
-                            onClick={() => setActiveTab('questions')}
-                            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'questions'
-                                ? 'border-blue-500  text-blue-600'
-                                : ' text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                                } `}
-                        >
-                            <div className="flex items-center gap-2">
-                                <BookOpen className="h-5 w-5" />
-                                Questions
-                            </div>
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('files')}
-                            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'files'
-                                ? 'border-blue-500 border-b-2 text-blue-600'
-                                : ' text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                                } `}
-                        >
-                            <div className="flex items-center gap-2">
-                                <FileText className="h-5 w-5" />
-                                Question Files
-                            </div>
-                        </button>
+                    <nav className="flex space-x-8 px-6 justify-between">
+                        <div className="flex items-center gap-8">
+                            <button
+                                onClick={() => setActiveTab('questions')}
+                                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'questions'
+                                    ? 'border-blue-500  text-blue-600'
+                                    : ' text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                    } `}
+                            >
+                                <div className="flex items-center gap-2">
+                                    <BookOpen className="h-5 w-5" />
+                                    Questions
+                                </div>
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('files')}
+                                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'files'
+                                    ? 'border-blue-500 border-b-2 text-blue-600'
+                                    : ' text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                    } `}
+                            >
+                                <div className="flex items-center gap-2">
+                                    <FileText className="h-5 w-5" />
+                                    Question Files
+                                </div>
+                            </button>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            {selectedQuestions.length > 0 && (
+                                <>
+                                    {statusFilter !== 'active' && (<button
+                                        onClick={() => handleBulkAction('verify')}
+                                        disabled={loading}
+                                        className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-md text-sm flex items-center gap-2 transition-colors disabled:opacity-50"
+                                    >
+                                        <CheckSquare className="h-4 w-4" />
+                                        Verify Selected ({selectedQuestions.length})
+                                    </button>)}
+
+                                    {statusFilter !== 'inactive' && (<button
+                                        onClick={() => handleBulkAction('reject')}
+                                        disabled={loading}
+                                        className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-md text-sm flex items-center gap-2 transition-colors disabled:opacity-50"
+                                    >
+                                        <XCircle className="h-4 w-4" />
+                                        Reject Selected ({selectedQuestions.length})
+                                    </button>)}
+                                </>
+                            )}
+                        </div>
                     </nav>
+
                 </div>
             </div>
 
@@ -635,6 +766,14 @@ const Question = () => {
                             <table className="min-w-full">
                                 <thead>
                                     <tr>
+                                        <th className="table-header w-12">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectAll}
+                                                onChange={handleSelectAll}
+                                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                            />
+                                        </th>
                                         <th
                                             className="table-header cursor-pointer hover:bg-gray-100 transition-colors"
                                             onClick={() => handleSortColumn('content')}
@@ -652,15 +791,6 @@ const Question = () => {
                                             <div className="flex items-center gap-2">
                                                 <span>Type</span>
                                                 <SortIcon column="type" />
-                                            </div>
-                                        </th>
-                                        <th
-                                            className="table-header cursor-pointer hover:bg-gray-100 transition-colors"
-                                            onClick={() => handleSortColumn('difficultyLevel')}
-                                        >
-                                            <div className="flex items-center gap-2">
-                                                <span>Difficulty</span>
-                                                <SortIcon column="difficultyLevel" />
                                             </div>
                                         </th>
                                         <th
@@ -700,6 +830,14 @@ const Question = () => {
                                     ) : (
                                         paginatedData.map((question, index) => (
                                             <tr key={question.id} className={`hover: bg - gray - 50 transition - colors ${index !== paginatedData.length - 1 ? 'border-b border-gray-100' : ''} `}>
+                                                <td className="table-cell w-12">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedQuestions.includes(question.id)}
+                                                        onChange={() => handleSelectQuestion(question.id)}
+                                                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                    />
+                                                </td>
                                                 <td className="table-cell">
                                                     <div className="flex items-center gap-3">
                                                         <div className="h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center shadow-md">
@@ -718,13 +856,8 @@ const Question = () => {
                                                     </span>
                                                 </td>
                                                 <td className="table-cell">
-                                                    <span className={`badge ${getLevelColor(question.difficultyLevel)} `}>
-                                                        {question.difficultyLevel}
-                                                    </span>
-                                                </td>
-                                                <td className="table-cell">
                                                     <span className={`badge ${getStatusColor(question.status)} `}>
-                                                        {question.status === 'active' ? 'Active' : 'Inactive'}
+                                                        {question.status === 'active' ? 'Active' : question.status === 'inactive' ? 'Inactive' : 'Pending Verification'}
                                                     </span>
                                                 </td>
                                                 <td className="table-cell">
@@ -813,7 +946,7 @@ const Question = () => {
                 </>
             )}
 
-            {/* Question Files Tab Content */}
+
             {activeTab === 'files' && (
                 <>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -824,14 +957,11 @@ const Question = () => {
                                         <FileText className="h-6 w-6 text-white" />
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <h3 className="font-semibold text-gray-900 truncate">{file.name}</h3>
+                                        <h3 className="font-semibold text-gray-900 truncate">{extractNameFromKey(file.name)}</h3>
                                         <p className="text-sm text-gray-600 mt-1 line-clamp-2">{file.description}</p>
                                         <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
-                                            <span>{file.uploadDate}</span>
-                                            <span>{file.fileSize}</span>
-                                            <span className="text-purple-600 font-medium">
-                                                {file.name.split('.').pop().toUpperCase()} File
-                                            </span>
+                                            <span>{formatDateFromKey(file.name)}</span>
+
                                         </div>
                                     </div>
                                 </div>
@@ -857,7 +987,6 @@ const Question = () => {
             )
             }
 
-            {/* Create/Edit Modal */}
             {
                 showModal && (
                     <div className="modal-overlay">
@@ -973,7 +1102,7 @@ const Question = () => {
                 )
             }
 
-            {/* View Modal */}
+
             {
                 showViewModal && viewingQuestion && (
                     <div className="modal-overlay bg-black bg-opacity-50 flex items-center justify-center">
@@ -995,26 +1124,26 @@ const Question = () => {
                                     </div>
                                     <div>
                                         <label className="block text-sm font-semibold text-gray-600 mb-1">Type</label>
-                                        <p className={`text - gray - 800 px - 3 py - 1 rounded - md inline - block ${getTypeColor(viewingQuestion.type)} text - white`}>
+                                        <p className={`text-gray-800 px-3 py-1 rounded-md inline-block ${getTypeColor(viewingQuestion.type)} text-white`}>
                                             {viewingQuestion.type.replace('_', ' ').toUpperCase()}
                                         </p>
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-semibold text-gray-600 mb-1">Topic</label>
-                                        <p className="text-gray-800 bg-purple-100 px-3 py-1 rounded-md inline-block">
-                                            {allTopics.find(t => t.id === viewingQuestion.topicId)?.name || 'Unknown Topic'}
-                                        </p>
-                                    </div>
-                                    <div>
                                         <label className="block text-sm font-semibold text-gray-600 mb-1">Difficulty Level</label>
-                                        <p className={`text - gray - 800 px - 3 py - 1 rounded - md inline - block ${viewingQuestion.difficultyLevel === 'easy' ? 'bg-green-100' : viewingQuestion.difficultyLevel === 'medium' ? 'bg-yellow-100' : 'bg-red-100'} `}>
+                                        <p className={`text-gray-800 px-3 py-1 rounded-md inline-block ${viewingQuestion.difficultyLevel === 'easy' ? 'bg-green-100' : viewingQuestion.difficultyLevel === 'medium' ? 'bg-yellow-100' : 'bg-red-100'}`}>
                                             {viewingQuestion.difficultyLevel}
                                         </p>
                                     </div>
                                     <div>
+                                        <label className="block text-sm font-semibold text-gray-600 mb-1">Topic</label>
+                                        <p className="text-gray-800 px-3 py-1 rounded-md inline-block bg-gray-100">
+                                            {viewingQuestion.topicName ? viewingQuestion.topicName : 'No topic assigned'}
+                                        </p>
+                                    </div>
+                                    <div>
                                         <label className="block text-sm font-semibold text-gray-600 mb-1">Status</label>
-                                        <p className={`text - gray - 800 px - 3 py - 1 rounded - md inline - block ${viewingQuestion.status === 'active' ? 'bg-green-100' : 'bg-red-100'} `}>
-                                            {viewingQuestion.status === 'active' ? 'Active' : 'Inactive'}
+                                        <p className={`text-gray-800 px-3 py-1 rounded-md inline-block ${viewingQuestion.status === 'active' ? 'bg-green-100' : viewingQuestion.status === 'inactive' ? 'bg-red-100' : 'bg-yellow-100'}`}>
+                                            {viewingQuestion.status === 'active' ? 'Active' : viewingQuestion.status === 'inactive' ? 'Inactive' : 'Pending Verification'}
                                         </p>
                                     </div>
                                 </div>
@@ -1032,7 +1161,6 @@ const Question = () => {
                 )
             }
 
-            {/* Upload File Modal */}
             {
                 showFileModal && (
                     <div className="modal-overlay">
