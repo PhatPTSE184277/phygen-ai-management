@@ -39,6 +39,7 @@ const statusOptions = [
 const UserManagement = () => {
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
@@ -55,6 +56,7 @@ const UserManagement = () => {
   // Fetch users
   const fetchUsers = async () => {
     try {
+      setLoading(true);
       const response = await api.get("account_admins", {
         params: {
           Page: 1,
@@ -66,6 +68,8 @@ const UserManagement = () => {
     } catch (e) {
       console.log("Error", e);
       toast.error("Failed to fetch users");
+    } finally {
+      setLoading(false);
     }
   };
   // Search functionality
@@ -177,6 +181,7 @@ const UserManagement = () => {
       try {
         await api.delete(`account_admins/${userId}`);
         toast.success("User deleted successfully!");
+        fetchUsers();
       } catch (error) {
         toast.error(
           "Delete failed: " + (error.response?.data?.message || error.message)
@@ -301,7 +306,7 @@ const UserManagement = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search users by name, email or role..."
+              placeholder="Search users by id, name or email..."
               className="input-field pl-11"
               value={searchTerm}
               onChange={(e) => {
@@ -373,72 +378,103 @@ const UserManagement = () => {
               </tr>
             </thead>
             <tbody>
-              {paginatedData.map((user, index) => (
-                <tr
-                  key={user.id}
-                  className={`hover:bg-gray-50 transition-colors ${
-                    index !== paginatedData.length - 1
-                      ? "border-b border-gray-100"
-                      : ""
-                  }`}
-                >
-                  <td className="table-cell">
-                    <span className="text-gray-600">{user.id}</span>
-                  </td>
-                  <td className="table-cell">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center shadow-md">
-                        <span className="text-sm font-semibold text-white">
-                          {user.username.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                      <div>
-                        <div className="font-semibold text-gray-900">
-                          {user.username}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="table-cell">
-                    <span className="text-gray-600">{user.email}</span>
-                  </td>
-                  <td className="table-cell">
-                    <span className={`badge ${getRoleColor(user.role)}`}>
-                      {getRoleLabel(user.role)}
-                    </span>
-                  </td>
-                  <td className="table-cell">
-                    <span className={`badge ${getStatusColor(user.status)}`}>
-                      {getStatusLabel(user.status)}
-                    </span>
-                  </td>
-                  <td className="table-cell">
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => handleView(user)}
-                        className="btn-icon-secondary"
-                        title="View details"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleEdit(user)}
-                        className="btn-icon-primary"
-                        title="Edit user"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(user.id)}
-                        className="btn-icon-danger"
-                        title="Delete user"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+              {loading ? (
+                <tr>
+                  <td
+                    colSpan="6"
+                    className="table-cell text-center text-gray-500 py-8"
+                  >
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                      Loading users...
                     </div>
                   </td>
                 </tr>
-              ))}
+              ) : paginatedData && paginatedData.length > 0 ? (
+                paginatedData.map((user, index) => (
+                  <tr
+                    key={user.id}
+                    className={`hover:bg-gray-50 transition-colors ${
+                      index !== paginatedData.length - 1
+                        ? "border-b border-gray-100"
+                        : ""
+                    }`}
+                  >
+                    <td className="table-cell">
+                      <span className="text-gray-600">{user.id}</span>
+                    </td>
+                    <td className="table-cell">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center shadow-md">
+                          <span className="text-sm font-semibold text-white">
+                            {user.username.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                        <div>
+                          <div className="font-semibold text-gray-900">
+                            {user.username}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="table-cell">
+                      <span className="text-gray-600">{user.email}</span>
+                    </td>
+                    <td className="table-cell">
+                      <span className={`badge ${getRoleColor(user.role)}`}>
+                        {getRoleLabel(user.role)}
+                      </span>
+                    </td>
+                    <td className="table-cell">
+                      <span className={`badge ${getStatusColor(user.status)}`}>
+                        {getStatusLabel(user.status)}
+                      </span>
+                    </td>
+                    <td className="table-cell">
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleView(user)}
+                          className="btn-icon-secondary"
+                          title="View details"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleEdit(user)}
+                          className="btn-icon-primary"
+                          title="Edit user"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(user.id)}
+                          className="btn-icon-danger"
+                          title="Delete user"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan="6"
+                    className="table-cell text-center text-gray-500 py-8"
+                  >
+                    <div className="flex flex-col items-center gap-2">
+                      <Search className="h-12 w-12 text-gray-300" />
+                      <p className="text-lg font-medium">No users found</p>
+                      <p className="text-sm">
+                        {searchTerm
+                          ? "Try adjusting your search criteria"
+                          : "Create your first user to get started"}
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

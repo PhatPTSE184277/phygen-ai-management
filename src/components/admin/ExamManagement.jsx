@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
+import { toast } from "react-toastify";
 import { useSearch } from "../../hooks/useSearch";
 import { useSort } from "../../hooks/useSort";
 import { usePagination } from "../../hooks/usePagination";
@@ -14,7 +15,6 @@ import {
   Eye,
   X,
   FileText,
-  BookOpen,
 } from "lucide-react";
 import exApi from "../../config/exApi";
 
@@ -23,12 +23,27 @@ const ExamManagement = () => {
   const [loading, setLoading] = useState(true);
   const [showViewModal, setShowViewModal] = useState(false);
   const [viewingExam, setViewingExam] = useState(null);
+  const [examVersions, setExamVersions] = useState([]);
+  const [loadingVersions, setLoadingVersions] = useState(false);
+  // Fetch users
+  const fetchExams = async () => {
+    try {
+      setLoading(true);
+      const response = await exApi.get("exams?size=150");
 
+      console.log(response);
+      console.log(response?.data?.data?.content);
+      setExams(response?.data?.data?.content || []);
+    } catch (e) {
+      console.log("Error", e);
+      setExams([]);
+    } finally {
+      setLoading(false);
+    }
+  };
   // Search functionality - cập nhật để phù hợp với API fields
   const { searchTerm, setSearchTerm, filteredData } = useSearch(exams || [], [
     "id",
-    "examType",
-    "createdAt",
   ]);
 
   // Sort functionality
@@ -50,36 +65,53 @@ const ExamManagement = () => {
     hasPrev,
   } = usePagination(sortedData, 5);
 
-  const handleView = (exam) => {
+  const handleView = async (exam) => {
     console.log(exam);
     setViewingExam(exam);
     setShowViewModal(true);
+    fetchExamVersions(exam?.id);
   };
 
-  const handleDelete = (examId) => {
+  const fetchExamVersions = async (examId) => {
+    try {
+      setLoadingVersions(true);
+      const response = await exApi.get(`exam-versions/by-exam/${examId}`);
+      console.log("Exam versions response:", response);
+      setExamVersions(response?.data?.data?.content || []);
+    } catch (error) {
+      console.error("Error fetching exam versions:", error);
+      toast.error("Failed to fetch exam versions");
+      setExamVersions([]);
+    } finally {
+      setLoadingVersions(false);
+    }
+  };
+
+  const handleDelete = async (examId) => {
     if (window.confirm("Are you sure you want to delete this exam?")) {
-      setExams(exams.filter((exam) => exam.id !== examId));
+      try {
+        await exApi.delete(`exams/${examId}`);
+        toast.success("Exam deleted successfully");
+        fetchExams();
+      } catch (error) {
+        console.error("Error deleting exam:", error);
+        toast.error("Failed to delete exam");
+      }
     }
   };
 
   const getStatusColor = (status) => {
     switch (status.toLowerCase()) {
-      case "published":
+      case "active":
         return "badge-green";
-      case "draft":
-        return "badge-gray";
-      case "archived":
-        return "badge-red";
       default:
         return "badge-gray";
     }
   };
 
   const formatCreatedAt = (createAtArray) => {
-    // Debug log để xem dữ liệu đầu vào
     console.log("formatCreatedAt input:", createAtArray);
 
-    // Kiểm tra các trường hợp null/undefined
     if (!createAtArray) {
       console.log("createAtArray is null/undefined");
       return "N/A";
@@ -87,7 +119,6 @@ const ExamManagement = () => {
 
     if (!Array.isArray(createAtArray)) {
       console.log("createAtArray is not an array:", typeof createAtArray);
-      // Nếu là string, có thể là ISO date
       if (typeof createAtArray === "string") {
         try {
           const date = new Date(createAtArray);
@@ -100,7 +131,7 @@ const ExamManagement = () => {
             hour12: true,
           });
         } catch {
-          return createAtArray; // Return as is if can't parse
+          return createAtArray;
         }
       }
       return "Invalid Format";
@@ -163,22 +194,7 @@ const ExamManagement = () => {
   useEffect(() => {
     fetchExams();
   }, []);
-  // Fetch users
-  const fetchExams = async () => {
-    try {
-      setLoading(true);
-      const response = await exApi.get("exams?size=150");
 
-      console.log(response)
-      console.log(response?.data?.data?.content);
-      setExams(response?.data?.data?.content || []);
-    } catch (e) {
-      console.log("Error", e);
-      setExams([]);
-    } finally {
-      setLoading(false);
-    }
-  };
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -198,7 +214,7 @@ const ExamManagement = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search exams by ID or create at..."
+              placeholder="Search exams by ID..."
               className="input-field pl-11"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -386,7 +402,19 @@ const ExamManagement = () => {
 
               <div className="hidden sm:flex items-center gap-1">
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  const page = i + 1;
+                  let page;
+                  if (totalPages <= 5) {
+                    page = i + 1;
+                  } else {
+                    if (currentPage <= 3) {
+                      page = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      page = totalPages - 4 + i;
+                    } else {
+                      page = currentPage - 2 + i;
+                    }
+                  }
+
                   return (
                     <button
                       key={page}
@@ -419,7 +447,7 @@ const ExamManagement = () => {
       {/* View Modal */}
       {showViewModal && viewingExam && (
         <div className="modal-overlay">
-          <div className="modal-content max-w-lg">
+          <div className="modal-content max-w-4xl max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-bold text-gray-900">
@@ -433,11 +461,6 @@ const ExamManagement = () => {
                 </button>
               </div>
               <div className="space-y-6">
-                <div className="flex items-center justify-center">
-                  <div className="h-20 w-20 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
-                    <BookOpen className="h-10 w-10 text-white" />
-                  </div>
-                </div>
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-500 mb-1">
@@ -467,6 +490,17 @@ const ExamManagement = () => {
                         {viewingExam?.status || "N/A"}
                       </span>
                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-500 mb-1">
+                        Created Date
+                      </label>
+                      <p className="text-gray-900">
+                        {formatCreatedAt(viewingExam.createdAt)}
+                      </p>
+                    </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-500 mb-1">
                         Draft Status
@@ -481,19 +515,78 @@ const ExamManagement = () => {
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-500 mb-1">
-                      Created Date
-                    </label>
-                    <p className="text-gray-900">
-                      {formatCreatedAt(viewingExam.createdAt)}
-                    </p>
+                  {/* Exam Versions Section */}
+                  <div className="border-t pt-6">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-4">
+                      Exam Versions
+                    </h4>
+                    {loadingVersions ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                        <span className="ml-2 text-gray-600">
+                          Loading versions...
+                        </span>
+                      </div>
+                    ) : examVersions && examVersions.length > 0 ? (
+                      <div className="space-y-3">
+                        {examVersions.map((version, index) => (
+                          <div
+                            key={version.id || index}
+                            className="border rounded-lg p-4 bg-gray-50"
+                          >
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-xs font-semibold text-gray-500 mb-1">
+                                  Version ID
+                                </label>
+                                <p className="text-sm font-medium text-gray-900">
+                                  {version.id}
+                                </p>
+                              </div>
+                              <div>
+                                <label className="block text-xs font-semibold text-gray-500 mb-1">
+                                  Version Code
+                                </label>
+                                <p className="text-sm text-gray-900">
+                                  {version.versionCode || "N/A"}
+                                </p>
+                              </div>
+                            </div>
+                            {version.pdfUrl && (
+                              <div className="mt-3">
+                                <label className="block text-xs font-semibold text-gray-500 mb-1">
+                                  PDF Document
+                                </label>
+                                <a
+                                  href={version.pdfUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm font-medium"
+                                >
+                                  <FileText className="h-4 w-4" />
+                                  View PDF
+                                </a>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        <FileText className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+                        <p>No versions found for this exam</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
               <div className="mt-8">
                 <button
-                  onClick={() => setShowViewModal(false)}
+                  onClick={() => {
+                    setShowViewModal(false);
+                    setExamVersions([]);
+                    setLoadingVersions(false);
+                  }}
                   className="btn-primary w-full"
                 >
                   Close
