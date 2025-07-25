@@ -27,15 +27,12 @@ const AdminLayout = () => {
 
   const navigation = [
     { name: 'Dashboard', href: '/admin', icon: Home },
+    { name: 'Subjects', href: '/admin/subjects', icon: Award },
     { name: 'Topics', href: '/admin/topics', icon: Blocks },
     { name: 'Questions', href: '/admin/questions', icon: FileQuestionMark },
-    { name: 'Users', href: '/admin/users', icon: Users },
-    { name: 'Subjects', href: '/admin/subjects', icon: Award },
     { name: 'Exams', href: '/admin/exams', icon: BookOpen },
     { name: 'Users', href: '/admin/users', icon: Users },
-    { name: 'Categories', href: '/admin/categories', icon: FolderOpen },
-    { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
-    { name: 'Settings', href: '/admin/settings', icon: Settings },
+
   ];
 
   const handleLogout = () => {

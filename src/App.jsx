@@ -13,9 +13,7 @@ import AdminLayout from "./components/admin/AdminLayout";
 import Dashboard from "./components/admin/Dashboard/Dashboard";
 import UserManagement from "./components/admin/UserManagement";
 import ExamManagement from "./components/admin/ExamManagement";
-import CategoryManagement from "./components/admin/CategoryManagement";
-import Analytics from "./components/admin/Analytics";
-import Settings from "./components/admin/Settings";
+
 import Topic from "./components/admin/Topic";
 import Question from "./components/admin/Question";
 import UserExams from "./components/admin/UsersExam";
@@ -109,9 +107,6 @@ function App() {
               <Route path="users/exams" element={<UserExams />} />
               <Route path="subjects" element={<SubjectManagement />} />
               <Route path="exams" element={<ExamManagement />} />
-              <Route path="categories" element={<CategoryManagement />} />
-              <Route path="analytics" element={<Analytics />} />
-              <Route path="settings" element={<Settings />} />
               <Route path="topics" element={<Topic />} />
               <Route path="questions" element={<Question />} />
             </Route>
