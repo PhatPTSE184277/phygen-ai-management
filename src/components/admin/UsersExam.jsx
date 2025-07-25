@@ -57,7 +57,7 @@ const UserExams = () => {
     prevPage,
     hasNext,
     hasPrev,
-  } = usePagination(sortedData, 5);
+  } = usePagination(sortedData, 10);
 
   const handleView = async (exam) => {
     console.log(exam);
@@ -82,12 +82,9 @@ const UserExams = () => {
 
   const getStatusColor = (status) => {
     switch (status.toLowerCase()) {
-      case "published":
+      case "active":
         return "badge-green";
-      case "draft":
-        return "badge-gray";
-      case "archived":
-        return "badge-red";
+
       default:
         return "badge-gray";
     }
@@ -216,7 +213,7 @@ const UserExams = () => {
       <div className="page-header">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate(-1)}  
             className="btn-icon-secondary"
             title="Go back"
           >
