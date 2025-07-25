@@ -1,9 +1,6 @@
 import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { toast } from "react-toastify";
-import { useSearch } from "../../hooks/useSearch";
-import { useSort } from "../../hooks/useSort";
-import { usePagination } from "../../hooks/usePagination";
 import {
   Search,
   Trash2,
@@ -25,45 +22,85 @@ const ExamManagement = () => {
   const [viewingExam, setViewingExam] = useState(null);
   const [examVersions, setExamVersions] = useState([]);
   const [loadingVersions, setLoadingVersions] = useState(false);
-  // Fetch users
-  const fetchExams = async () => {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+  const [pageSize] = useState(10);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortKey, setSortKey] = useState('id');
+  const [sortOrder, setSortOrder] = useState('asc');
+  // Fetch exams with pagination
+  const fetchExams = async (page = 1, search = '', sort = 'id', order = 'asc') => {
     try {
       setLoading(true);
-      const response = await exApi.get("exams?size=150");
+      const params = new URLSearchParams({
+        page: (page - 1).toString(), // API uses 0-based indexing
+        size: pageSize.toString(),
+        sortBy: sort,
+        sortDir: order
+      });
 
-      console.log(response);
-      console.log(response?.data?.data?.content);
-      setExams(response?.data?.data?.content || []);
+      if (search.trim()) {
+        params.append('search', search);
+      }
+
+      const response = await exApi.get(`exams?${params.toString()}`);
+
+      if (response?.data?.success) {
+        const data = response.data.data;
+        setExams(data.content || []);
+        setTotalPages(data.totalPages || 0);
+        setTotalElements(data.totalElements || 0);
+        setCurrentPage(page);
+      } else {
+        setExams([]);
+        setTotalPages(0);
+        setTotalElements(0);
+      }
     } catch (e) {
-      console.log("Error", e);
       setExams([]);
+      setTotalPages(0);
+      setTotalElements(0);
     } finally {
       setLoading(false);
     }
   };
-  // Search functionality - cập nhật để phù hợp với API fields
-  const { searchTerm, setSearchTerm, filteredData } = useSearch(exams || [], [
-    "id",
-  ]);
+  // Handle search
+  const handleSearch = (value) => {
+    setSearchTerm(value);
+    setCurrentPage(1); // Reset to first page when searching
+    fetchExams(1, value, sortKey, sortOrder);
+  };
 
-  // Sort functionality
-  const { sortedData, sortKey, sortOrder, handleSort } = useSort(
-    filteredData,
-    "id",
-    "asc"
-  );
+  // Handle sort
+  const handleSort = (column) => {
+    const newOrder = sortKey === column && sortOrder === 'asc' ? 'desc' : 'asc';
+    setSortKey(column);
+    setSortOrder(newOrder);
+    fetchExams(currentPage, searchTerm, column, newOrder);
+  };
 
-  // Pagination functionality
-  const {
-    currentPage,
-    totalPages,
-    paginatedData,
-    goToPage,
-    nextPage,
-    prevPage,
-    hasNext,
-    hasPrev,
-  } = usePagination(sortedData, 5);
+  // Handle page navigation
+  const goToPage = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      fetchExams(page, searchTerm, sortKey, sortOrder);
+    }
+  };
+
+  const nextPage = () => {
+    if (currentPage < totalPages) {
+      goToPage(currentPage + 1);
+    }
+  };
+
+  const prevPage = () => {
+    if (currentPage > 1) {
+      goToPage(currentPage - 1);
+    }
+  };
+
+  const hasNext = () => currentPage < totalPages;
+  const hasPrev = () => currentPage > 1;
 
   const handleView = async (exam) => {
     console.log(exam);
@@ -76,10 +113,10 @@ const ExamManagement = () => {
     try {
       setLoadingVersions(true);
       const response = await exApi.get(`exam-versions/by-exam/${examId}`);
-      console.log("Exam versions response:", response);
+      ;
       setExamVersions(response?.data?.data?.content || []);
     } catch (error) {
-      console.error("Error fetching exam versions:", error);
+
       toast.error("Failed to fetch exam versions");
       setExamVersions([]);
     } finally {
@@ -87,18 +124,60 @@ const ExamManagement = () => {
     }
   };
 
-  const handleDelete = async (examId) => {
-    if (window.confirm("Are you sure you want to delete this exam?")) {
-      try {
-        await exApi.delete(`exams/${examId}`);
-        toast.success("Exam deleted successfully");
-        fetchExams();
-      } catch (error) {
-        console.error("Error deleting exam:", error);
-        toast.error("Failed to delete exam");
-      }
-    }
-  };
+
+
+  // const handleDelete = (examId) => {
+  //   toast.info(
+  //     ({ closeToast }) => (
+  //       <div>
+  //         <p>Are you sure you want to delete this exam?</p>
+  //         <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+  //           <button
+  //             onClick={async () => {
+  //               try {
+  //                 const response = await exApi.delete(`exams/${examId}`);
+  //                 if (response.data.success) {
+  //                   toast.success('Exam deleted successfully');
+  //                   fetchExams(currentPage, searchTerm, sortKey, sortOrder);
+  //                 } else {
+  //                   toast.error('Failed to delete exam');
+  //                 }
+  //               } catch (error) {
+  //                 toast.error('Failed to delete exam');
+  //               } finally {
+  //                 closeToast();
+  //               }
+  //             }}
+  //             style={{
+  //               backgroundColor: '#d9534f',
+  //               color: '#fff',
+  //               border: 'none',
+  //               padding: '6px 12px',
+  //               borderRadius: '4px',
+  //               cursor: 'pointer',
+  //             }}
+  //           >
+  //             Confirm
+  //           </button>
+  //           <button
+  //             onClick={closeToast}
+  //             style={{
+  //               backgroundColor: '#f0f0f0',
+  //               color: '#333',
+  //               border: '1px solid #ccc',
+  //               padding: '6px 12px',
+  //               borderRadius: '4px',
+  //               cursor: 'pointer',
+  //             }}
+  //           >
+  //             Cancel
+  //           </button>
+  //         </div>
+  //       </div>
+  //     ),
+
+  //   );
+  // };
 
   const getStatusColor = (status) => {
     switch (status.toLowerCase()) {
@@ -110,15 +189,12 @@ const ExamManagement = () => {
   };
 
   const formatCreatedAt = (createAtArray) => {
-    console.log("formatCreatedAt input:", createAtArray);
 
     if (!createAtArray) {
-      console.log("createAtArray is null/undefined");
       return "N/A";
     }
 
     if (!Array.isArray(createAtArray)) {
-      console.log("createAtArray is not an array:", typeof createAtArray);
       if (typeof createAtArray === "string") {
         try {
           const date = new Date(createAtArray);
@@ -138,7 +214,6 @@ const ExamManagement = () => {
     }
 
     if (createAtArray.length < 6) {
-      console.log("createAtArray length insufficient:", createAtArray.length);
       return "Incomplete Date";
     }
 
@@ -160,7 +235,7 @@ const ExamManagement = () => {
       );
 
       if (isNaN(date.getTime())) {
-        console.log("Invalid date created");
+
         return "Invalid Date";
       }
 
@@ -173,7 +248,6 @@ const ExamManagement = () => {
         hour12: true,
       });
     } catch {
-      console.error("Error formatting date");
       return "Error";
     }
   };
@@ -217,12 +291,12 @@ const ExamManagement = () => {
               placeholder="Search exams by ID..."
               className="input-field pl-11"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => handleSearch(e.target.value)}
             />
           </div>
           <div className="flex items-center gap-3 text-sm text-gray-600">
-            <span className="font-medium">{paginatedData.length}</span> of{" "}
-            <span className="font-medium">{filteredData.length}</span> exams
+            <span className="font-medium">{exams.length}</span> of{" "}
+            <span className="font-medium">{totalElements}</span> exams
           </div>
         </div>
       </div>
@@ -295,15 +369,14 @@ const ExamManagement = () => {
                     </div>
                   </td>
                 </tr>
-              ) : paginatedData && paginatedData.length > 0 ? (
-                paginatedData.map((exam, index) => (
+              ) : exams && exams.length > 0 ? (
+                exams.map((exam, index) => (
                   <tr
                     key={exam?.id || index}
-                    className={`hover:bg-gray-50 transition-colors ${
-                      index !== paginatedData.length - 1
-                        ? "border-b border-gray-100"
-                        : ""
-                    }`}
+                    className={`hover:bg-gray-50 transition-colors ${index !== exams.length - 1
+                      ? "border-b border-gray-100"
+                      : ""
+                      }`}
                   >
                     <td className="table-cell">
                       <span className="text-gray-600">{exam?.id}</span>
@@ -342,13 +415,13 @@ const ExamManagement = () => {
                           <Eye className="h-4 w-4" />
                         </button>
 
-                        <button
+                        {/* <button
                           onClick={() => handleDelete(exam?.id)}
                           className="btn-icon-danger"
                           title="Delete exam"
                         >
                           <Trash2 className="h-4 w-4" />
-                        </button>
+                        </button> */}
                       </div>
                     </td>
                   </tr>
@@ -393,7 +466,7 @@ const ExamManagement = () => {
             <div className="flex items-center gap-2">
               <button
                 onClick={prevPage}
-                disabled={!hasPrev}
+                disabled={!hasPrev()}
                 className="btn-secondary flex items-center gap-2 py-2 px-3 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ChevronLeft className="h-4 w-4" />
@@ -419,11 +492,10 @@ const ExamManagement = () => {
                     <button
                       key={page}
                       onClick={() => goToPage(page)}
-                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        currentPage === page
-                          ? "bg-blue-600 text-white shadow-md"
-                          : "text-gray-600 hover:bg-gray-100"
-                      }`}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${currentPage === page
+                        ? "bg-blue-600 text-white shadow-md"
+                        : "text-gray-600 hover:bg-gray-100"
+                        }`}
                     >
                       {page}
                     </button>
@@ -433,7 +505,7 @@ const ExamManagement = () => {
 
               <button
                 onClick={nextPage}
-                disabled={!hasNext}
+                disabled={!hasNext()}
                 className="btn-secondary flex items-center gap-2 py-2 px-3 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span className="hidden sm:inline">Next</span>
@@ -506,9 +578,8 @@ const ExamManagement = () => {
                         Draft Status
                       </label>
                       <span
-                        className={`badge ${
-                          viewingExam?.draft ? "badge-blue" : "badge-green"
-                        }`}
+                        className={`badge ${viewingExam?.draft ? "badge-blue" : "badge-green"
+                          }`}
                       >
                         {viewingExam?.draft ? "Draft" : "Published"}
                       </span>

@@ -17,17 +17,22 @@ import {
     Eye,
     X,
     BookOpen,
-    Users
+    Users,
+    FileText
 } from 'lucide-react';
 import api from '../../config/axios';
+import exApi from '../../config/exApi';
 
 const Topic = () => {
     const [allTopics, setAllTopics] = useState([]); // Store all topics from server
     const [subjects, setSubjects] = useState([]); // Store subjects for dropdown
     const [showModal, setShowModal] = useState(false);
     const [showViewModal, setShowViewModal] = useState(false);
+    const [showQuestionsModal, setShowQuestionsModal] = useState(false);
     const [editingTopic, setEditingTopic] = useState(null);
     const [viewingTopic, setViewingTopic] = useState(null);
+    const [selectedTopicQuestions, setSelectedTopicQuestions] = useState([]);
+    const [questionsLoading, setQuestionsLoading] = useState(false);
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -161,6 +166,24 @@ const Topic = () => {
         }
     };
 
+    const fetchTopicQuestions = async (topicId) => {
+        try {
+            setQuestionsLoading(true);
+            const response = await exApi.get(`questions/by-topic/${topicId}?page=0&size=100`);
+            if (response.data.success) {
+                setSelectedTopicQuestions(response.data.data.content || []);
+            } else {
+                toast.info('No questions for this topic');
+                setSelectedTopicQuestions([]);
+            }
+        } catch (error) {
+            toast.info('No questions for this topic');
+            setSelectedTopicQuestions([]);
+        } finally {
+            setQuestionsLoading(false);
+        }
+    };
+
     useEffect(() => {
         fetchTopicData();
         fetchSubjects();
@@ -200,6 +223,12 @@ const Topic = () => {
     const handleView = (topic) => {
         setViewingTopic(topic);
         setShowViewModal(true);
+    };
+
+    const handleViewQuestions = (topic) => {
+        setViewingTopic(topic);
+        setShowQuestionsModal(true);
+        fetchTopicQuestions(topic.id);
     };
 
 
@@ -544,6 +573,13 @@ const Topic = () => {
                                         <td className="table-cell">
                                             <div className="flex items-center gap-1">
                                                 <button
+                                                    onClick={() => handleViewQuestions(topic)}
+                                                    className="btn-icon-secondary"
+                                                    title="View questions"
+                                                >
+                                                    <FileText className="h-4 w-4" />
+                                                </button>
+                                                <button
                                                     onClick={() => handleView(topic)}
                                                     className="btn-icon-secondary"
                                                     title="View details"
@@ -783,6 +819,92 @@ const Topic = () => {
                                     Close
                                 </button>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Questions Modal */}
+            {showQuestionsModal && viewingTopic && (
+                <div className="modal-overlay bg-black bg-opacity-50 flex items-center justify-center">
+                    <div className="modal-content bg-white rounded-lg shadow-lg w-full max-w-4xl max-h-[80vh] overflow-hidden">
+                        <div className="p-6 border-b border-gray-200">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h3 className="text-2xl font-bold text-gray-800">Questions for Topic: {viewingTopic.name}</h3>
+                                    <p className="text-sm text-gray-600 mt-1">
+                                        {selectedTopicQuestions.length} question(s) found
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => setShowQuestionsModal(false)}
+                                    className="text-gray-500 hover:text-gray-700"
+                                >
+                                    <X className="h-6 w-6" />
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="p-6 overflow-y-auto max-h-[50vh]">
+                            {questionsLoading ? (
+                                <div className="flex items-center justify-center py-8">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                                    <span className="ml-2 text-gray-600">Loading questions...</span>
+                                </div>
+                            ) : selectedTopicQuestions.length === 0 ? (
+                                <div className="text-center py-8">
+                                    <FileText className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+                                    <h3 className="text-lg font-medium text-gray-900 mb-2">No questions found</h3>
+                                    <p className="text-gray-600">This topic doesn't have any questions yet.</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {selectedTopicQuestions.map((question, index) => (
+                                        <div key={question.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                                            <div className="flex items-start justify-between">
+                                                <div className="flex-1">
+                                                    <div className="flex items-center gap-3 mb-2">
+                                                        <span className="text-sm font-medium text-gray-500">#{index + 1}</span>
+                                                        <span className={`px-2 py-1 rounded text-xs font-medium ${question.type === 'multiple_choice' ? 'bg-blue-100 text-blue-800' :
+                                                            question.type === 'essay' ? 'bg-purple-100 text-purple-800' :
+                                                                'bg-gray-100 text-gray-800'
+                                                            }`}>
+                                                            {question.type?.replace('_', ' ').toUpperCase() || 'Unknown'}
+                                                        </span>
+                                                        <span className={`px-2 py-1 rounded text-xs font-medium ${question.difficultyLevel === 'easy' ? 'bg-green-100 text-green-800' :
+                                                            question.difficultyLevel === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                                                                question.difficultyLevel === 'hard' ? 'bg-red-100 text-red-800' :
+                                                                    'bg-gray-100 text-gray-800'
+                                                            }`}>
+                                                            {question.difficultyLevel || 'Unknown'}
+                                                        </span>
+                                                        <span className={`px-2 py-1 rounded text-xs font-medium ${question.status === 'active' ? 'bg-green-100 text-green-800' :
+                                                            question.status === 'inactive' ? 'bg-red-100 text-red-800' :
+                                                                'bg-yellow-100 text-yellow-800'
+                                                            }`}>
+                                                            {question.status === 'active' ? 'Active' :
+                                                                question.status === 'inactive' ? 'Inactive' :
+                                                                    'Pending'}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-gray-900 font-medium leading-relaxed">
+                                                        {question.content}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="p-6 border-t border-gray-200">
+                            <button
+                                onClick={() => setShowQuestionsModal(false)}
+                                className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                            >
+                                Close
+                            </button>
                         </div>
                     </div>
                 </div>
