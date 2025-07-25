@@ -1,13 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
+import { toast } from "react-toastify";
 import { useSearch } from "../../hooks/useSearch";
 import { useSort } from "../../hooks/useSort";
 import { usePagination } from "../../hooks/usePagination";
 import {
   Search,
-  Plus,
-  Edit,
-  Trash2,
   Filter,
   ChevronUp,
   ChevronDown,
@@ -15,20 +14,24 @@ import {
   ChevronRight,
   Eye,
   X,
-  Clock,
   FileText,
   BookOpen,
+  ArrowLeft,
 } from "lucide-react";
 import exApi from "../../config/exApi";
+import api from "../../config/axios";
 
-const ExamManagement = () => {
+const UserExams = () => {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const userId = searchParams.get("userId");
+
   const [exams, setExams] = useState([]);
+  const [userInfo, setUserInfo] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
-  const [editingExam, setEditingExam] = useState(null);
   const [viewingExam, setViewingExam] = useState(null);
-  
+
   // Search functionality - cập nhật để phù hợp với API fields
   const { searchTerm, setSearchTerm, filteredData } = useSearch(exams || [], [
     "id",
@@ -55,19 +58,11 @@ const ExamManagement = () => {
     hasPrev,
   } = usePagination(sortedData, 5);
 
-
   const handleView = (exam) => {
     console.log(exam);
     setViewingExam(exam);
     setShowViewModal(true);
   };
-
-  const handleDelete = (examId) => {
-    if (window.confirm("Are you sure you want to delete this exam?")) {
-      setExams(exams.filter((exam) => exam.id !== examId));
-    }
-  };
-
 
   const getStatusColor = (status) => {
     switch (status.toLowerCase()) {
@@ -167,34 +162,48 @@ const ExamManagement = () => {
     column: PropTypes.string.isRequired,
   };
 
-  useEffect(() => {
-    fetchExams();
-  }, []);
-  // Fetch users
-  const fetchExams = async () => {
+  const fetchUserExams = async () => {
     try {
       setLoading(true);
-      const response = await exApi.get("exams?size=150");
-      console.log(response?.data?.data?.content);
+      // Use the specific API endpoint to get exams by account ID
+      const response = await exApi.get(`exams/by-account/${userId}`);
+      console.log("User exams response:", response?.data?.data?.content);
       setExams(response?.data?.data?.content || []);
-    } catch (e) {
-      console.log("Error", e);
+    } catch (error) {
+      console.error("Error fetching user exams:", error);
+      toast.error("Failed to fetch user exams");
       setExams([]);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (userId) {
+      fetchUserExams();
+    }
+  }, []);
   return (
     <div className="space-y-8">
       {/* Header */}
       <div className="page-header">
-        <div>
-          <h1 className="page-title">Exam Management</h1>
-          <p className="page-subtitle">
-            Create, manage, and organize your exams and assessments
-          </p>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => navigate(-1)}
+            className="btn-icon-secondary"
+            title="Go back"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <div>
+            <h1 className="page-title">
+              {userInfo ? `${userInfo.username}'s Exams` : "User Exams"}
+            </h1>
+            <p className="page-subtitle">
+              View and manage exams created by this user
+            </p>
+          </div>
         </div>
-      
       </div>
 
       {/* Search and Filters */}
@@ -204,7 +213,7 @@ const ExamManagement = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search exams by ID or create at..."
+              placeholder="Search user's exams by ID, type or created date..."
               className="input-field pl-11"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -331,14 +340,6 @@ const ExamManagement = () => {
                         >
                           <Eye className="h-4 w-4" />
                         </button>
-                      
-                        <button
-                          onClick={() => handleDelete(exam?.id)}
-                          className="btn-icon-danger"
-                          title="Delete exam"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
                       </div>
                     </td>
                   </tr>
@@ -355,7 +356,7 @@ const ExamManagement = () => {
                       <p className="text-sm">
                         {searchTerm
                           ? "Try adjusting your search criteria"
-                          : "Create your first exam to get started"}
+                          : "This user hasn't created any exams yet"}
                       </p>
                     </div>
                   </td>
@@ -422,8 +423,6 @@ const ExamManagement = () => {
         </div>
       </div>
 
-
-
       {/* View Modal */}
       {showViewModal && viewingExam && (
         <div className="modal-overlay">
@@ -488,7 +487,6 @@ const ExamManagement = () => {
                       </span>
                     </div>
                   </div>
-                 
 
                   <div>
                     <label className="block text-sm font-semibold text-gray-500 mb-1">
@@ -516,4 +514,4 @@ const ExamManagement = () => {
   );
 };
 
-export default ExamManagement;
+export default UserExams;
