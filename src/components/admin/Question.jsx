@@ -287,8 +287,6 @@ const Question = () => {
 
   const handleEdit = async (question) => {
     setEditingQuestion(question);
-
-    // Initialize form with question data
     const initialFormData = {
       content: question.content,
       type: question.type,
@@ -302,20 +300,16 @@ const Question = () => {
       ],
     };
 
-    // If it's a multiple choice question, fetch existing answers
     if (question.type === "multiple_choice") {
       try {
         const response = await exApi.get(`answers/by-question/${question.id}`);
         if (response.data.success && response.data.data.content.length > 0) {
-          const existingAnswers = response.data.data.content;
-
-          // Fill existing answers into the form
+          const existingAnswers = response.data.data.con
           const formAnswers = [...initialFormData.answers];
           existingAnswers.forEach((answer, index) => {
             if (index < 4) {
-              // Only take first 4 answers
               formAnswers[index] = {
-                id: answer.id, // Add ID to track existing answers
+                id: answer.id, 
                 content: answer.content,
                 correct: answer.correct,
               };
@@ -326,7 +320,6 @@ const Question = () => {
         }
       } catch (error) {
         console.error("Error fetching answers for edit:", error);
-        // Continue with empty answers if fetch fails
       }
     }
 
@@ -346,12 +339,12 @@ const Question = () => {
       if (response.data.success) {
         setAnswersData(response.data.data.content);
       } else {
-        setAnswersData([]); // Reset nếu không thành công
+        setAnswersData([]); 
         toast.error("Failed to fetch answers");
       }
     } catch (error) {
       console.error("Error fetching answers:", error);
-      setAnswersData([]); // Reset nếu có lỗi
+      setAnswersData([]); 
       toast.error("Failed to fetch answers");
     } finally {
       setLoadingAnswers(false);
@@ -360,14 +353,14 @@ const Question = () => {
 
   const handleViewQuestions = async (question) => {
     setViewingQuestion(question);
-    setAnswersData([]); // Reset answers data khi mở modal mới
+    setAnswersData([]); 
     setShowAnswersModal(true);
     await fetchAnswers(question.id);
   };
 
   const handleCloseAnswersModal = () => {
     setShowAnswersModal(false);
-    setAnswersData([]); // Reset answers data khi đóng modal
+    setAnswersData([]); 
     setViewingQuestion(null);
   };
   // Separate function to create new answers
