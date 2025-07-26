@@ -20,6 +20,9 @@ import UserExams from "./components/admin/UsersExam";
 import PropTypes from "prop-types";
 import 'react-toastify/dist/ReactToastify.css';
 import SubjectManagement from './components/admin/Subject/SubjectManagement';
+import ExamMatrixManagement from "./components/admin/ExamMatrixManagement";
+import MatrixSection from "./components/admin/MatrixSection";
+import MatrixDetail from "./components/admin/MatrixDetail";
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -109,6 +112,9 @@ function App() {
               <Route path="exams" element={<ExamManagement />} />
               <Route path="topics" element={<Topic />} />
               <Route path="questions" element={<Question />} />
+              <Route path="exam-matrix" element={<ExamMatrixManagement/>} />
+              <Route path="matrix-section" element={<MatrixSection/>} />
+              <Route path="matrix-detail" element={<MatrixDetail/>} />
             </Route>
 
             {/* Fallback route */}

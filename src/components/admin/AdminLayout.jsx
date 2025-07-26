@@ -7,13 +7,14 @@ import {
   Home,
   Users,
   BookOpen,
-  BarChart3,
-  Settings,
   LogOut,
-  FolderOpen,
   Blocks,
   FileQuestionMark,
-  Award
+  Award,
+  Grid3X3,
+  Table,
+  AlignStartVertical,
+  ListCollapse
 } from 'lucide-react';
 
 const AdminLayout = () => {
@@ -25,15 +26,18 @@ const AdminLayout = () => {
     return <Navigate to="/login" replace />;
   }
 
-  const navigation = [
-    { name: 'Dashboard', href: '/admin', icon: Home },
-    { name: 'Subjects', href: '/admin/subjects', icon: Award },
-    { name: 'Topics', href: '/admin/topics', icon: Blocks },
-    { name: 'Questions', href: '/admin/questions', icon: FileQuestionMark },
-    { name: 'Exams', href: '/admin/exams', icon: BookOpen },
-    { name: 'Users', href: '/admin/users', icon: Users },
+ const navigation = [
+  { name: 'Dashboard', href: '/admin', icon: Home },
+  { name: 'Subjects', href: '/admin/subjects', icon: Award },
+  { name: 'Exam matrix', href: '/admin/exam-matrix', icon: Grid3X3 },
+  { name: 'Matrix section', href: '/admin/matrix-section', icon: AlignStartVertical },
+  { name: 'Matrix Detail', href: '/admin/matrix-detail', icon: ListCollapse },
+  { name: 'Topics', href: '/admin/topics', icon: Blocks },
+  { name: 'Questions', href: '/admin/questions', icon: FileQuestionMark },
+  { name: 'Exams', href: '/admin/exams', icon: BookOpen },
+  { name: 'Users', href: '/admin/users', icon: Users },
 
-  ];
+];
 
   const handleLogout = () => {
     logout();
