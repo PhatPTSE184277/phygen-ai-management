@@ -198,13 +198,13 @@ const ExamManagement = () => {
       if (typeof createAtArray === "string") {
         try {
           const date = new Date(createAtArray);
-          return date.toLocaleDateString("en-US", {
+          return date.toLocaleDateString("vi-VN", {
             year: "numeric",
             month: "short",
             day: "2-digit",
             hour: "2-digit",
             minute: "2-digit",
-            hour12: true,
+            hour12: false,
           });
         } catch {
           return createAtArray;
@@ -372,11 +372,10 @@ const ExamManagement = () => {
                 exams.map((exam, index) => (
                   <tr
                     key={exam?.id || index}
-                    className={`hover:bg-gray-50 transition-colors ${
-                      index !== exams.length - 1
+                    className={`hover:bg-gray-50 transition-colors ${index !== exams.length - 1
                         ? "border-b border-gray-100"
                         : ""
-                    }`}
+                      }`}
                   >
                     <td className="table-cell">
                       <span className="text-gray-600">{exam?.id}</span>
@@ -492,11 +491,10 @@ const ExamManagement = () => {
                     <button
                       key={page}
                       onClick={() => goToPage(page)}
-                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        currentPage === page
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${currentPage === page
                           ? "bg-blue-600 text-white shadow-md"
                           : "text-gray-600 hover:bg-gray-100"
-                      }`}
+                        }`}
                     >
                       {page}
                     </button>
@@ -579,9 +577,8 @@ const ExamManagement = () => {
                         Draft Status
                       </label>
                       <span
-                        className={`badge ${
-                          viewingExam?.draft ? "badge-blue" : "badge-green"
-                        }`}
+                        className={`badge ${viewingExam?.draft ? "badge-blue" : "badge-green"
+                          }`}
                       >
                         {viewingExam?.draft ? "Draft" : "Published"}
                       </span>
