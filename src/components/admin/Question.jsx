@@ -833,7 +833,7 @@ const Question = () => {
   }
 
   return (
-    <div className="space-y-8">
+    <div>
       {/* Header */}
       <div className="page-header">
         <div>
@@ -1135,13 +1135,13 @@ const Question = () => {
                         </td>
                         <td className="table-cell">
                           <div className="flex items-center gap-1">
-                            <button
+                              {question.type !== 'essay' ? (  <button
                               onClick={() => handleViewQuestions(question)}
                               className="btn-icon-secondary"
                               title="View questions"
                             >
                               <FileText className="h-4 w-4" />
-                            </button>
+                            </button>) : (<></>)}
                             <button
                               onClick={() => handleView(question)}
                               className="btn-icon-secondary"

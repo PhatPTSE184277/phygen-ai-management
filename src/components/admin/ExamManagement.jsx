@@ -205,6 +205,7 @@ const ExamManagement = () => {
             hour: "2-digit",
             minute: "2-digit",
             hour12: true,
+            timeZone: "Asia/Ho_Chi_Minh"
           });
         } catch {
           return createAtArray;
@@ -245,6 +246,7 @@ const ExamManagement = () => {
         hour: "2-digit",
         minute: "2-digit",
         hour12: true,
+        timeZone: "Asia/Ho_Chi_Minh"
       });
     } catch {
       return "Error";
@@ -269,7 +271,7 @@ const ExamManagement = () => {
   }, []);
 
   return (
-    <div className="space-y-8">
+    <div>
       {/* Header */}
       <div className="page-header">
         <div>

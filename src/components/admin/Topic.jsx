@@ -361,7 +361,7 @@ const Topic = () => {
     };
 
     return (
-        <div className="space-y-8">
+        <div>
             {/* Header */}
             <div className="page-header">
                 <div>
