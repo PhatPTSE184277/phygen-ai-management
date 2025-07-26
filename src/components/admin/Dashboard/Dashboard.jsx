@@ -82,8 +82,8 @@ const Dashboard = () => {
      const fetchMonthlyExamCounts = async () => {
       setLoadingMonthlyExamCounts(true);
       try {
-        const res = await exApi.get('/api/dashboard/exams/monthly-counts?targetYear=2025');
-        console.log(res.data)
+        const res = await exApi.get('/dashboard/exams/monthly-counts?targetYear=2025');
+        console.log(res)
         if (res && res.data && res.data.data) {
           setMonthlyExamCounts(res.data.data);
         } else {
@@ -122,7 +122,15 @@ const Dashboard = () => {
     "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6",
     "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12"
   ];
-  const examMonthData = examMonthLabels.map((_, idx) => monthlyExamCounts[String(idx + 1)] || 0);
+  
+  // Debug logs để kiểm tra dữ liệu
+  console.log('monthlyExamCounts:', monthlyExamCounts);
+  const examMonthData = examMonthLabels.map((_, idx) => {
+    const value = monthlyExamCounts[String(idx + 1)] || 0;
+    // console.log(`Month ${idx + 1}: ${value}`);
+    return value;
+  });
+  console.log('examMonthData:', examMonthData);
 
   const examMonthBarData = {
     labels: examMonthLabels,
@@ -131,6 +139,8 @@ const Dashboard = () => {
         label: 'Số lượng đề thi',
         data: examMonthData,
         backgroundColor: '#6366f1',
+        borderColor: '#4f46e5',
+        borderWidth: 1,
         borderRadius: 8,
       },
     ],
@@ -138,15 +148,19 @@ const Dashboard = () => {
 
   const examMonthBarOptions = {
     responsive: true,
+    maintainAspectRatio: false,
     animation: {
       duration: 1200,
       easing: 'easeOutBounce',
     },
     plugins: {
-      legend: { display: false },
+      legend: { 
+        display: true,
+        position: 'top'
+      },
       tooltip: {
         callbacks: {
-          label: ctx => ctx.parsed.y + ' đề thi'
+          label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y} đề thi`
         }
       }
     },
@@ -154,8 +168,33 @@ const Dashboard = () => {
       y: {
         beginAtZero: true,
         ticks: {
-          stepSize: 5,
+          stepSize: 10,
+          callback: function(value) {
+            return Number.isInteger(value) ? value : '';
+          }
+        },
+        grid: {
+          display: true,
+          color: 'rgba(0, 0, 0, 0.1)'
         }
+      },
+      x: {
+        ticks: {
+          maxRotation: 45,
+          minRotation: 0,
+          font: {
+            size: 11
+          }
+        },
+        grid: {
+          display: false
+        }
+      }
+    },
+    layout: {
+      padding: {
+        top: 20,
+        bottom: 20
       }
     }
   };
@@ -289,12 +328,20 @@ const Dashboard = () => {
         <div className="h-64 flex items-center justify-center">
           {loadingMonthlyExamCounts ? (
             <ChartSkeleton type="bar" />
-          ) : (
+          ) : Object.keys(monthlyExamCounts).length > 0 ? (
             <Bar data={examMonthBarData} options={examMonthBarOptions} />
+          ) : (
+            <div className="text-center text-gray-500">
+              <BarChart3 className="h-12 w-12 mx-auto text-gray-300 mb-2" />
+              <p>No exam data available</p>
+            </div>
           )}
         </div>
         <div className="text-center mt-4">
-          <p className="text-sm text-gray-600">Số lượng đề thi từng tháng trong năm</p>
+          <p className="text-sm text-gray-600">Số lượng đề thi từng tháng trong năm 2025</p>
+          <p className="text-xs text-gray-400 mt-1">
+            Total: {examMonthData.reduce((a, b) => a + b, 0)} đề thi
+          </p>
         </div>
       </div>
       </div>
